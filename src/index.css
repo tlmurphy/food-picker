@@ -255,7 +255,7 @@ button { font-family: inherit; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-.pin-drop {
+.pin-drop-inner {
   animation: pin-drop 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 

@@ -14,7 +14,7 @@ L.Icon.Default.mergeOptions({
 
 const dropIcon = L.divIcon({
   className: 'pin-drop',
-  html: `<div class="pin-head"></div><div class="pin-shadow"></div>`,
+  html: `<div class="pin-drop-inner"><div class="pin-head"></div><div class="pin-shadow"></div></div>`,
   iconSize: [24, 36],
   iconAnchor: [12, 36],
   popupAnchor: [0, -36],
@@ -62,12 +62,14 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
 
   const newestRestaurant =
     newestId && newestId !== prevNewestId.current
-      ? restaurants.find((r) => r.id === newestId)
+      ? (restaurants.find((r) => r.id === newestId) ?? null)
       : null
 
-  if (newestRestaurant) {
-    prevNewestId.current = newestId
-  }
+  useEffect(() => {
+    if (newestId) {
+      prevNewestId.current = newestId
+    }
+  }, [newestId])
 
   return (
     <div className="map-wrapper">
