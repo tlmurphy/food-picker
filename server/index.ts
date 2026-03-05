@@ -46,6 +46,10 @@ function checkRateLimit(ip: string): boolean {
 // Maps each WebSocket to the sessionId it belongs to
 const wsToSession = new Map<ServerWebSocket<unknown>, string>()
 
+// Per-connection WS message rate limiter (60 messages/minute)
+const WS_RATE_LIMIT_MAX = 60
+const wsRateLimit = new WeakMap<ServerWebSocket<unknown>, { count: number; resetAt: number }>()
+
 // Input sanitization helpers
 function sanitize(s: unknown, maxLen: number): string {
   if (typeof s !== 'string') return ''
@@ -95,6 +99,17 @@ Bun.serve({
     },
 
     message(ws, rawMessage) {
+      // Per-connection rate limit
+      const now = Date.now()
+      const wsLimit = wsRateLimit.get(ws) ?? { count: 0, resetAt: now + 60_000 }
+      if (now > wsLimit.resetAt) { wsLimit.count = 0; wsLimit.resetAt = now + 60_000 }
+      wsLimit.count++
+      wsRateLimit.set(ws, wsLimit)
+      if (wsLimit.count > WS_RATE_LIMIT_MAX) {
+        ws.close(1008, 'Rate limit exceeded')
+        return
+      }
+
       // Reject oversized messages (64KB limit)
       if (typeof rawMessage === 'string' && rawMessage.length > 65536) {
         send(ws as unknown as WebSocket, { type: 'error', message: 'Message too large.' })
