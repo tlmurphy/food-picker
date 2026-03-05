@@ -9,12 +9,20 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api/places': {
-          target: 'https://places-api.foursquare.com',
+          target: 'https://places.googleapis.com',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/places/, '/places'),
-          headers: {
-            Authorization: `Bearer ${env.VITE_FOURSQUARE_API_KEY}`,
-            'X-Places-Api-Version': '2025-06-17',
+          rewrite: (path) => path.replace(/^\/api\/places/, '/v1/places'),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
+              proxyReq.setHeader('X-Goog-Api-Key', env.VITE_GOOGLE_MAPS_API_KEY)
+              const url = req.url ?? ''
+              if (url.includes(':autocomplete'))
+                proxyReq.setHeader('X-Goog-FieldMask', 'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.distanceMeters')
+              else if (url.includes(':searchText'))
+                proxyReq.setHeader('X-Goog-FieldMask', 'places.displayName,places.formattedAddress,places.location')
+              else
+                proxyReq.setHeader('X-Goog-FieldMask', 'location,displayName,formattedAddress')
+            })
           },
         },
       },

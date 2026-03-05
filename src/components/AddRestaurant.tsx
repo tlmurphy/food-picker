@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { searchNearbyRestaurant } from '../lib/overpass'
+import { autocompleteRestaurant, getRestaurantPlaceDetails } from '../lib/googlemaps'
 import type { Session } from '../types'
 
 interface Props {
@@ -16,72 +16,93 @@ interface Props {
   ) => Promise<unknown>
 }
 
-type Status = 'idle' | 'searching' | 'not-found' | 'error'
-
 export default function AddRestaurant({ session, userId, onAdd }: Props) {
   const [value, setValue] = useState('')
-  const [status, setStatus] = useState<Status>('idle')
-  const [message, setMessage] = useState('')
+  const [suggestions, setSuggestions] = useState<{ placeId: string; text: string }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const query = value.trim()
-    if (!query) return
-    if (session.location_lat == null || session.location_lng == null) return
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
 
-    setStatus('searching')
-    setMessage('')
-
-    try {
-      const result = await searchNearbyRestaurant(query, session.location_lat, session.location_lng)
-
-      if (!result) {
-        setStatus('not-found')
-        setMessage(`No location found for "${query}" nearby. Try a different name.`)
-        return
-      }
-
-      await onAdd(query, result.name, result.address, result.lat, result.lng, userId)
-      setValue('')
-      setStatus('idle')
-    } catch (err) {
-      console.error(err)
-      setStatus('error')
-      setMessage('Something went wrong. Check your connection and try again.')
+    if (!value.trim() || session.location_lat == null || session.location_lng == null) {
+      setSuggestions([])
+      return
     }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await autocompleteRestaurant(
+          value.trim(),
+          session.location_lat!,
+          session.location_lng!
+        )
+        setSuggestions(results)
+      } catch {
+        // Silently fail autocomplete
+      }
+    }, 300)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [value, session.location_lat, session.location_lng])
+
+  async function handleSelect(placeId: string, suggestionText: string) {
+    setSuggestions([])
+    setValue('')
+    setLoading(true)
+    setError('')
+    try {
+      const details = await getRestaurantPlaceDetails(placeId)
+      await onAdd(suggestionText, details.name, details.address, details.lat, details.lng, userId)
+    } catch {
+      setError('Something went wrong. Check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleBlur() {
+    setTimeout(() => setSuggestions([]), 150)
   }
 
   return (
     <div className="add-restaurant">
-      <form className="add-form" onSubmit={handleSubmit}>
+      <div className="autocomplete-wrapper">
         <input
           className="input"
           value={value}
           onChange={(e) => {
             setValue(e.target.value)
-            setStatus('idle')
+            setError('')
           }}
+          onBlur={handleBlur}
           placeholder="Add a restaurant (e.g. McDonald's)"
-          disabled={status === 'searching'}
+          disabled={loading}
+          autoComplete="off"
         />
-        <button
-          className="btn btn-primary"
-          type="submit"
-          disabled={status === 'searching' || !value.trim()}
-        >
-          {status === 'searching' ? '…' : '+'}
-        </button>
-      </form>
+        {suggestions.length > 0 && (
+          <ul className="autocomplete-dropdown">
+            {suggestions.map((s) => (
+              <li key={s.placeId} onMouseDown={() => handleSelect(s.placeId, s.text)}>
+                {s.text}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <AnimatePresence>
-        {(status === 'not-found' || status === 'error') && (
+        {error && (
           <motion.p
             className="add-status-msg"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            {message}
+            {error}
           </motion.p>
         )}
       </AnimatePresence>
