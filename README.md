@@ -7,8 +7,8 @@ A collaborative restaurant-picking app for two users on separate devices. Add re
 - **Frontend**: React + Vite + TypeScript
 - **Real-time sync**: Supabase Realtime (Postgres)
 - **Map**: Leaflet.js + OpenStreetMap (free, no API key)
-- **Restaurant search**: Foursquare Places API (free tier: 950 calls/day)
-- **Location geocoding**: Nominatim (OpenStreetMap, free)
+- **Restaurant search & autocomplete**: Google Places API (New)
+- **Location autocomplete**: Google Places API (New)
 - **Animations**: Framer Motion + canvas-confetti
 
 ## Setup
@@ -59,10 +59,11 @@ CREATE TABLE votes (
 
 4. Enable Realtime for all four tables: go to **Database → Publications**, click on **`supabase_realtime`**, and toggle on `sessions`, `session_users`, `restaurants`, and `votes`.
 
-### 2. Get a Foursquare API Key
+### 2. Get a Google Maps API Key
 
-1. Sign up at [foursquare.com/developer](https://foursquare.com/developer)
-2. Create a new project and copy the API key
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/) and create or select a project
+2. Enable the **Places API (New)**
+3. Create an API key under **APIs & Services → Credentials**
 
 ### 3. Configure Environment Variables
 
@@ -71,7 +72,7 @@ Copy your Supabase project URL and anon key from **Project Settings → API**, t
 ```
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_FOURSQUARE_API_KEY=fsq3...
+VITE_GOOGLE_MAPS_API_KEY=AIza...
 ```
 
 ### 4. Run the App
@@ -86,8 +87,8 @@ npm run dev
 1. **User 1** opens the app and clicks **Create Session** — note the 6-character code shown
 2. **User 2** opens the app on their device, clicks **Join Session**, and enters the code
 3. Both users enter their names
-4. Either user sets the shared location (type a city/neighborhood or use GPS)
-5. Either user can add restaurants by typing a name — the app finds the nearest matching location on OpenStreetMap and drops a pin on the map
+4. Either user sets the shared location — type a city, neighborhood, or address and pick from the autocomplete suggestions, or use GPS
+5. Either user can add restaurants by typing a name and selecting from the autocomplete dropdown — results are sorted by distance from the shared location
 6. Both users vote on each restaurant: **🥇 1** (top pick), **🥈 2** (okay), **🥉 3** (last resort)
 7. The list auto-sorts by combined vote score in real-time
 8. When both users vote **1** on the same restaurant — confetti fires and a **Get Directions** button appears 🎉
@@ -95,5 +96,5 @@ npm run dev
 ## Notes
 
 - Supabase free projects pause after 7 days of inactivity — just re-activate from the dashboard
-- Foursquare searches within 5km of the shared location by default (free tier: 950 calls/day)
+- Restaurant search is biased to within ~31 miles of the shared location
 - The app works on mobile; on small screens the map is above and the list is below
