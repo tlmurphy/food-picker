@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        '/ws': {
+          target: 'ws://localhost:3001',
+          ws: true,
+        },
         '/api/places': {
           target: 'https://places.googleapis.com',
           changeOrigin: true,

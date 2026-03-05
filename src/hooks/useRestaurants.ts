@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { socket } from '../lib/socket'
 import { sortRestaurants, checkAgreement } from '../lib/sort'
-import type { Restaurant, Vote, RestaurantWithVotes } from '../types'
+import type { RestaurantWithVotes } from '../types'
 
 export function useRestaurants(sessionId: string | undefined, userIds: string[]) {
   const [restaurants, setRestaurants] = useState<RestaurantWithVotes[]>([])
@@ -9,87 +9,54 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
   const [agreed, setAgreed] = useState<RestaurantWithVotes | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const userIdsKey = userIds.join(',')
+
   useEffect(() => {
     if (!sessionId) return
 
-    let mounted = true
+    const unsubscribe = socket.subscribe((msg) => {
+      switch (msg.type) {
+        case 'session_state': {
+          const sorted = sortRestaurants(msg.restaurants, userIds)
+          setRestaurants(sorted)
+          setAgreed(checkAgreement(sorted, userIds))
+          setLoading(false)
+          break
+        }
 
-    async function load() {
-      const { data: restaurantData } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('session_id', sessionId!)
-        .order('added_at')
-
-      const restaurantIds = (restaurantData ?? []).map((r) => r.id)
-
-      const { data: voteData } = restaurantIds.length > 0
-        ? await supabase.from('votes').select('*').in('restaurant_id', restaurantIds)
-        : { data: [] }
-
-      if (!mounted) return
-
-      const withVotes = mergeVotes(restaurantData ?? [], voteData ?? [])
-      const sorted = sortRestaurants(withVotes, userIds)
-      setRestaurants(sorted)
-      setAgreed(checkAgreement(sorted, userIds))
-      setLoading(false)
-    }
-
-    load()
-
-    const channel = supabase
-      .channel(`restaurants-${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'restaurants',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          if (!mounted) return
-          const newRestaurant = payload.new as Restaurant
+        case 'restaurant_added': {
+          const newRestaurant = msg.restaurant
           setNewestId(newRestaurant.id)
           setRestaurants((prev) => {
             if (prev.some((r) => r.id === newRestaurant.id)) return prev
-            const withVotes: RestaurantWithVotes = { ...newRestaurant, votes: [] }
-            const updated = [...prev, withVotes]
+            const updated = [...prev, newRestaurant]
             const sorted = sortRestaurants(updated, userIds)
             setAgreed(checkAgreement(sorted, userIds))
             return sorted
           })
+          break
         }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'votes' },
-        (payload) => {
-          if (!mounted) return
-          const vote = (payload.new ?? payload.old) as Vote
+
+        case 'vote_cast': {
+          const vote = msg.vote
           setRestaurants((prev) => {
             const updated = prev.map((r) => {
-              if (r.id !== vote.restaurant_id) return r
+              if (r.id !== vote.restaurantId) return r
               const filteredVotes = r.votes.filter((v) => v.id !== vote.id)
-              const newVotes =
-                payload.eventType === 'DELETE' ? filteredVotes : [...filteredVotes, payload.new as Vote]
-              return { ...r, votes: newVotes }
+              return { ...r, votes: [...filteredVotes, vote] }
             })
             const sorted = sortRestaurants(updated, userIds)
             setAgreed(checkAgreement(sorted, userIds))
             return sorted
           })
+          break
         }
-      )
-      .subscribe()
+      }
+    })
 
-    return () => {
-      mounted = false
-      supabase.removeChannel(channel)
-    }
+    return unsubscribe
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, userIds.join(',')])
+  }, [sessionId, userIdsKey])
 
   async function addRestaurant(
     inputName: string,
@@ -99,42 +66,12 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
     lng: number,
     addedBy: string
   ) {
-    const { data, error } = await supabase
-      .from('restaurants')
-      .insert({ session_id: sessionId!, input_name: inputName, found_name: foundName, address, lat, lng, added_by: addedBy })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    // Optimistic update so the pin drops immediately without waiting for the Realtime event
-    const newRestaurant: RestaurantWithVotes = { ...data, votes: [] }
-    setNewestId(data.id)
-    setRestaurants((prev) => {
-      if (prev.some((r) => r.id === data.id)) return prev
-      const updated = [...prev, newRestaurant]
-      const sorted = sortRestaurants(updated, userIds)
-      setAgreed(checkAgreement(sorted, userIds))
-      return sorted
-    })
-
-    return data
+    socket.send({ type: 'add_restaurant', inputName, foundName, address, lat, lng, addedBy })
   }
 
   async function castVote(restaurantId: string, userId: string, score: number) {
-    const { error } = await supabase.from('votes').upsert(
-      { restaurant_id: restaurantId, user_id: userId, score },
-      { onConflict: 'restaurant_id,user_id' }
-    )
-    if (error) throw error
+    socket.send({ type: 'cast_vote', restaurantId, userId, score })
   }
 
   return { restaurants, newestId, agreed, loading, addRestaurant, castVote }
-}
-
-function mergeVotes(restaurants: Restaurant[], votes: Vote[]): RestaurantWithVotes[] {
-  return restaurants.map((r) => ({
-    ...r,
-    votes: votes.filter((v) => v.restaurant_id === r.id),
-  }))
 }

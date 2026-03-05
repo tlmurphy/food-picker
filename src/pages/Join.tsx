@@ -1,10 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { nanoid } from 'nanoid'
-import { supabase } from '../lib/supabase'
 import { useUser } from '../hooks/useUser'
-import type { SessionUser } from '../types'
+import { socket } from '../lib/socket'
 
 type Step = 'landing' | 'join-code' | 'name'
 
@@ -17,56 +15,71 @@ export default function Join() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const { saveUser } = useUser(pendingSessionId ?? undefined)
+  const { user, saveUser } = useUser(pendingSessionId ?? undefined)
 
-  async function handleCreate() {
+  // Pick up ?join=<sessionId> from Game redirect when user is missing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const joinId = params.get('join')
+    if (joinId) {
+      setCode(joinId.toUpperCase())
+      setStep('join-code')
+    }
+  }, [])
+
+  function handleCreate() {
     setLoading(true)
     setError('')
-    const sessionId = nanoid(6).toUpperCase()
-    const { error: err } = await supabase.from('sessions').insert({ id: sessionId })
-    setLoading(false)
-    if (err) {
-      setError('Failed to create session. Try again.')
-      return
-    }
-    setPendingSessionId(sessionId)
-    setStep('name')
+    socket.send({ type: 'create_session' })
+
+    const unsubscribe = socket.subscribe((msg) => {
+      if (msg.type === 'session_created') {
+        unsubscribe()
+        setLoading(false)
+        setPendingSessionId(msg.sessionId)
+        setStep('name')
+      } else if (msg.type === 'error') {
+        unsubscribe()
+        setLoading(false)
+        setError('Failed to create session. Try again.')
+      }
+    })
   }
 
-  async function handleJoin() {
+  function handleJoin() {
     if (!code.trim()) return
-    setLoading(true)
-    setError('')
-    const { data, error: err } = await supabase
-      .from('sessions')
-      .select('id')
-      .eq('id', code.trim().toUpperCase())
-      .single()
-    setLoading(false)
-    if (err || !data) {
-      setError('Session not found. Check the code and try again.')
-      return
-    }
-    setPendingSessionId(data.id)
+    setPendingSessionId(code.trim().toUpperCase())
     setStep('name')
   }
 
-  async function handleName() {
+  function handleName() {
     if (!name.trim() || !pendingSessionId) return
     setLoading(true)
     setError('')
-    const { data, error: err } = await supabase
-      .from('session_users')
-      .insert({ session_id: pendingSessionId, name: name.trim() })
-      .select()
-      .single()
-    setLoading(false)
-    if (err || !data) {
-      setError('Failed to join. Try again.')
-      return
-    }
-    saveUser(data as SessionUser)
-    navigate(`/${pendingSessionId}`)
+
+    socket.send({
+      type: 'join_session',
+      sessionId: pendingSessionId,
+      userId: user?.id ?? '',
+      userName: user?.name ?? name.trim(),
+    })
+
+    const unsubscribe = socket.subscribe((msg) => {
+      if (msg.type === 'session_state') {
+        unsubscribe()
+        setLoading(false)
+        // Reconnect: match by existing id; new join: take last in list
+        const ourUser = user?.id
+          ? (msg.users.find((u) => u.id === user.id) ?? msg.users[msg.users.length - 1])
+          : msg.users[msg.users.length - 1]
+        saveUser(ourUser)
+        navigate(`/${pendingSessionId}`)
+      } else if (msg.type === 'error') {
+        unsubscribe()
+        setLoading(false)
+        setError(msg.message)
+      }
+    })
   }
 
   return (
@@ -104,8 +117,8 @@ export default function Join() {
               autoFocus
             />
             <div className="button-group">
-              <button className="btn btn-primary" onClick={handleJoin} disabled={loading || !code.trim()}>
-                {loading ? 'Checking…' : 'Join'}
+              <button className="btn btn-primary" onClick={handleJoin} disabled={!code.trim()}>
+                Join
               </button>
               <button className="btn btn-ghost" onClick={() => setStep('landing')}>
                 Back

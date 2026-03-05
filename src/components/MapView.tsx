@@ -56,8 +56,8 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
   const prevNewestId = useRef<string | null>(null)
 
   const center: [number, number] =
-    session?.location_lat != null && session?.location_lng != null
-      ? [session.location_lat, session.location_lng]
+    session?.locationLat != null && session?.locationLng != null
+      ? [session.locationLat, session.locationLng]
       : defaultCenter
 
   const newestRestaurant =
@@ -75,7 +75,7 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
     <div className="map-wrapper">
       <MapContainer
         center={center}
-        zoom={session?.location_lat != null ? 13 : 4}
+        zoom={session?.locationLat != null ? 13 : 4}
         className="leaflet-map"
         zoomControl
       >
@@ -84,8 +84,8 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {session?.location_lat != null && session?.location_lng != null && !newestRestaurant && (
-          <SetCenter lat={session.location_lat} lng={session.location_lng} />
+        {session?.locationLat != null && session?.locationLng != null && !newestRestaurant && (
+          <SetCenter lat={session.locationLat} lng={session.locationLng} />
         )}
 
         {newestRestaurant?.lat != null && newestRestaurant?.lng != null && (
@@ -102,7 +102,7 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
               icon={isNew ? dropIcon : new L.Icon.Default()}
             >
               <Popup>
-                <strong>{r.found_name ?? r.input_name}</strong>
+                <strong>{r.foundName ?? r.inputName}</strong>
                 {r.address && <><br />{r.address}</>}
                 <br />
                 <a

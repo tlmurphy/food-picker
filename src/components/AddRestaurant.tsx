@@ -26,7 +26,7 @@ export default function AddRestaurant({ session, userId, onAdd }: Props) {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
-    if (!value.trim() || session.location_lat == null || session.location_lng == null) {
+    if (!value.trim() || session.locationLat == null || session.locationLng == null) {
       setSuggestions([])
       return
     }
@@ -35,8 +35,8 @@ export default function AddRestaurant({ session, userId, onAdd }: Props) {
       try {
         const results = await autocompleteRestaurant(
           value.trim(),
-          session.location_lat!,
-          session.location_lng!
+          session.locationLat!,
+          session.locationLng!
         )
         setSuggestions(results)
       } catch {
@@ -47,7 +47,7 @@ export default function AddRestaurant({ session, userId, onAdd }: Props) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [value, session.location_lat, session.location_lng])
+  }, [value, session.locationLat, session.locationLng])
 
   async function handleSelect(placeId: string, suggestionText: string) {
     setSuggestions([])

@@ -5,7 +5,8 @@
       "Bash(nvm use lts/krypton)",
       "Bash(npm run build)",
       "WebFetch(domain:location.foursquare.com)",
-      "WebFetch(domain:docs.foursquare.com)"
+      "WebFetch(domain:docs.foursquare.com)",
+      "Bash(bun install)"
     ]
   }
 }

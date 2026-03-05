@@ -10,10 +10,10 @@ interface Props {
 }
 
 export default function RestaurantCard({ restaurant, users, currentUserId, rank, onVote }: Props) {
-  const myVote = restaurant.votes.find((v) => v.user_id === currentUserId)
+  const myVote = restaurant.votes.find((v) => v.userId === currentUserId)
 
   const bothVoted1 = users.length >= 2 && users.every((u) => {
-    const v = restaurant.votes.find((vt) => vt.user_id === u.id)
+    const v = restaurant.votes.find((vt) => vt.userId === u.id)
     return v?.score === 1
   })
 
@@ -32,7 +32,7 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
       <div className="card-rank">{rank}</div>
 
       <div className="card-info">
-        <h3 className="card-name">{restaurant.found_name ?? restaurant.input_name}</h3>
+        <h3 className="card-name">{restaurant.foundName ?? restaurant.inputName}</h3>
         {restaurant.address && <p className="card-address">{restaurant.address}</p>}
 
         <div className="vote-row">
@@ -50,7 +50,7 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
 
         <div className="other-votes">
           {users.map((u) => {
-            const v = restaurant.votes.find((vt) => vt.user_id === u.id)
+            const v = restaurant.votes.find((vt) => vt.userId === u.id)
             if (u.id === currentUserId) return null
             return (
               <span key={u.id} className="other-vote-chip">

@@ -15,7 +15,7 @@ export function sortRestaurants(
 
 function computeScore(restaurant: RestaurantWithVotes, userIds: string[]): number {
   return userIds.reduce((sum, userId) => {
-    const vote = restaurant.votes.find((v) => v.user_id === userId)
+    const vote = restaurant.votes.find((v) => v.userId === userId)
     return sum + (vote?.score ?? NO_VOTE_PENALTY)
   }, 0)
 }
@@ -28,7 +28,7 @@ export function checkAgreement(
 
   for (const restaurant of restaurants) {
     const allVotedOne = userIds.every((userId) => {
-      const vote = restaurant.votes.find((v) => v.user_id === userId)
+      const vote = restaurant.votes.find((v) => v.userId === userId)
       return vote?.score === 1
     })
     if (allVotedOne) return restaurant

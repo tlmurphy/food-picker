@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { socket } from '../lib/socket'
 import type { Session, SessionUser } from '../types'
 
 export function useSession(sessionId: string | undefined) {
@@ -11,76 +11,42 @@ export function useSession(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) return
 
-    let mounted = true
+    const unsubscribe = socket.subscribe((msg) => {
+      switch (msg.type) {
+        case 'session_state':
+          setSession(msg.session)
+          setUsers(msg.users)
+          setLoading(false)
+          break
 
-    async function load() {
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('id', sessionId!)
-        .single()
+        case 'error':
+          setError(msg.message)
+          setLoading(false)
+          break
 
-      if (!mounted) return
+        case 'user_joined':
+          setUsers((prev) => {
+            if (prev.some((u) => u.id === msg.user.id)) return prev
+            return [...prev, msg.user]
+          })
+          break
 
-      if (sessionError) {
-        setError('Session not found.')
-        setLoading(false)
-        return
+        case 'location_updated':
+          setSession((prev) =>
+            prev ? { ...prev, locationLat: msg.lat, locationLng: msg.lng, locationLabel: msg.label } : prev
+          )
+          break
       }
+    })
 
-      setSession(sessionData)
-
-      const { data: usersData } = await supabase
-        .from('session_users')
-        .select('*')
-        .eq('session_id', sessionId!)
-        .order('joined_at')
-
-      if (mounted) {
-        setUsers(usersData ?? [])
-        setLoading(false)
-      }
-    }
-
-    load()
-
-    // Real-time: session updates (location changes)
-    const sessionChannel = supabase
-      .channel(`session-${sessionId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
-        (payload) => {
-          if (mounted) setSession(payload.new as Session)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'session_users',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          if (mounted) setUsers((prev) => [...prev, payload.new as SessionUser])
-        }
-      )
-      .subscribe()
-
-    return () => {
-      mounted = false
-      supabase.removeChannel(sessionChannel)
-    }
+    return unsubscribe
   }, [sessionId])
 
   async function updateLocation(lat: number, lng: number, label: string) {
     if (!sessionId) return
-    await supabase
-      .from('sessions')
-      .update({ location_lat: lat, location_lng: lng, location_label: label })
-      .eq('id', sessionId)
-    setSession((prev) => prev ? { ...prev, location_lat: lat, location_lng: lng, location_label: label } : prev)
+    // Optimistic update
+    setSession((prev) => prev ? { ...prev, locationLat: lat, locationLng: lng, locationLabel: label } : prev)
+    socket.send({ type: 'update_location', lat, lng, label })
   }
 
   return { session, users, loading, error, updateLocation }

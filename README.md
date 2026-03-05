@@ -5,82 +5,49 @@ A collaborative restaurant-picking app for two users on separate devices. Add re
 ## Tech Stack
 
 - **Frontend**: React + Vite + TypeScript
-- **Real-time sync**: Supabase Realtime (Postgres)
+- **Backend**: Bun WebSocket server (in-memory, no database)
 - **Map**: Leaflet.js + OpenStreetMap (free, no API key)
 - **Restaurant search & autocomplete**: Google Places API (New)
 - **Location autocomplete**: Google Places API (New)
 - **Animations**: Framer Motion + canvas-confetti
+- **Deployment**: Railway
 
 ## Setup
 
-### 1. Create a Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) and create a free account
-2. Create a new project
-3. Go to **SQL Editor** and run the following schema:
-
-```sql
-CREATE TABLE sessions (
-  id TEXT PRIMARY KEY,
-  location_lat DOUBLE PRECISION,
-  location_lng DOUBLE PRECISION,
-  location_label TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE session_users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  joined_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE restaurants (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
-  input_name TEXT NOT NULL,
-  found_name TEXT,
-  address TEXT,
-  lat DOUBLE PRECISION,
-  lng DOUBLE PRECISION,
-  added_by UUID REFERENCES session_users(id),
-  added_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE votes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES session_users(id) ON DELETE CASCADE,
-  score INTEGER CHECK (score BETWEEN 1 AND 3),
-  voted_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(restaurant_id, user_id)
-);
-```
-
-4. Enable Realtime for all four tables: go to **Database → Publications**, click on **`supabase_realtime`**, and toggle on `sessions`, `session_users`, `restaurants`, and `votes`.
-
-### 2. Get a Google Maps API Key
+### 1. Get a Google Maps API Key
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/) and create or select a project
 2. Enable the **Places API (New)**
 3. Create an API key under **APIs & Services → Credentials**
 
-### 3. Configure Environment Variables
+### 2. Configure Environment Variables
 
-Copy your Supabase project URL and anon key from **Project Settings → API**, then create `.env.local`:
+Create `.env.local`:
 
 ```
-VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_WS_URL=ws://localhost:5173/ws
 VITE_GOOGLE_MAPS_API_KEY=AIza...
 ```
 
-### 4. Run the App
+### 3. Install and Run
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
+
+This starts both the Vite dev server (port 5173) and the Bun WebSocket server (port 3001) concurrently.
+
+## Deployment (Railway)
+
+1. Push the repo to GitHub
+2. Create a new project on [Railway](https://railway.com) and connect the GitHub repo
+3. Set the following environment variables in the Railway dashboard:
+   - **Build variable**: `VITE_WS_URL=wss://your-app.up.railway.app/ws` (must be set before build)
+   - **Runtime variable**: `GOOGLE_MAPS_API_KEY=AIza...` (no `VITE_` prefix — server-side only)
+4. Railway auto-deploys on every push to `main`
+
+The single Railway service serves the static React build, handles WebSocket connections, and proxies Google Maps requests — all from one URL.
 
 ## How to Play
 
@@ -95,6 +62,6 @@ npm run dev
 
 ## Notes
 
-- Supabase free projects pause after 7 days of inactivity — just re-activate from the dashboard
+- Sessions are ephemeral — all data lives in memory and is lost when the server restarts or after 30 seconds of inactivity
 - Restaurant search is biased to within ~31 miles of the shared location
 - The app works on mobile; on small screens the map is above and the list is below

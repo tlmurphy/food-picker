@@ -53,7 +53,7 @@ export default function CelebrationOverlay({ restaurant }: Props) {
       <div className="celebration-card">
         <div className="celebration-emoji">🎉</div>
         <h2>You both agree!</h2>
-        <p className="celebration-name">{restaurant.found_name ?? restaurant.input_name}</p>
+        <p className="celebration-name">{restaurant.foundName ?? restaurant.inputName}</p>
         {restaurant.address && <p className="celebration-address">{restaurant.address}</p>}
 
         {directionsUrl && (

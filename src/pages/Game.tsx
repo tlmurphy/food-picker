@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useRestaurants } from '../hooks/useRestaurants'
 import { useUser } from '../hooks/useUser'
+import { socket } from '../lib/socket'
 import MapView from '../components/MapView'
 import RestaurantList from '../components/RestaurantList'
 import AddRestaurant from '../components/AddRestaurant'
@@ -19,6 +20,13 @@ export default function Game() {
     sessionId,
     userIds
   )
+
+  // Rejoin session on direct page load / refresh (user already in localStorage)
+  useEffect(() => {
+    if (!user || !sessionId) return
+    socket.send({ type: 'join_session', sessionId, userId: user.id, userName: user.name })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, user?.id])
 
   useEffect(() => {
     if (!user && !sessionLoading) {
@@ -47,7 +55,7 @@ export default function Game() {
 
   if (!user) return null
 
-  const hasLocation = session?.location_lat != null && session?.location_lng != null
+  const hasLocation = session?.locationLat != null && session?.locationLng != null
 
   return (
     <div className="game-layout">
