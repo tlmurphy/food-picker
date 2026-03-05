@@ -36,22 +36,23 @@ bun install
 bun run dev
 ```
 
-This starts both the Vite dev server (port 5173) and the Bun WebSocket server (port 3001) concurrently.
+This starts both the Vite dev server (port 5173) and the Bun WebSocket server (port 3001) concurrently. Open **`http://localhost:5173`** in your browser — not 3001, which is the backend only and serves the stale production build.
 
 ## Deployment (Railway)
 
 1. Push the repo to GitHub
 2. Create a new project on [Railway](https://railway.com) and connect the GitHub repo
 3. Set the following environment variables in the Railway dashboard:
-   - **Build variable**: `VITE_WS_URL=wss://your-app.up.railway.app/ws` (must be set before build)
-   - **Runtime variable**: `GOOGLE_MAPS_API_KEY=AIza...` (no `VITE_` prefix — server-side only)
+   - **Build variable**: `VITE_WS_URL=wss://your-app.up.railway.app/ws` (must be set before build — Vite bakes it into the client bundle)
+   - **Runtime variable**: `GOOGLE_MAPS_API_KEY=AIza...` (no `VITE_` prefix — server-side only, never exposed to the browser)
+   - **Runtime variable**: `RAILWAY_PUBLIC_DOMAIN` is auto-set by Railway (e.g., `your-app.up.railway.app`) — the server uses it to validate WebSocket connection origins and block requests from other websites. If you use a custom domain, set this variable to your custom domain instead.
 4. Railway auto-deploys on every push to `main`
 
 The single Railway service serves the static React build, handles WebSocket connections, and proxies Google Maps requests — all from one URL.
 
 ## How to Play
 
-1. **User 1** opens the app and clicks **Create Session** — note the 6-character code shown
+1. **User 1** opens the app and clicks **Create Session** — note the 10-character code shown
 2. **User 2** opens the app on their device, clicks **Join Session**, and enters the code
 3. Both users enter their names
 4. Either user sets the shared location — type a city, neighborhood, or address and pick from the autocomplete suggestions, or use GPS

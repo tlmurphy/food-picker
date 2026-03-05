@@ -13,7 +13,7 @@ const store = new Map<string, SessionState>()
 const SESSION_CLEANUP_DELAY_MS = 30_000
 
 export function createSession(): string {
-  const id = nanoid(6).toUpperCase()
+  const id = nanoid(10).toUpperCase()
   store.set(id, {
     session: { id, locationLat: null, locationLng: null, locationLabel: null },
     users: [],
@@ -49,6 +49,9 @@ export function joinSession(
     state.connections.set(ws, existing.id)
     return { state, user: existing, isNew: false }
   }
+
+  // Enforce user limit
+  if (state.users.length >= 20) return null
 
   // New user
   const user: SessionUser = {
@@ -96,6 +99,7 @@ export function addRestaurant(
 ): Restaurant | null {
   const state = store.get(sessionId)
   if (!state) return null
+  if (state.restaurants.length >= 50) return null
   const restaurant: Restaurant = {
     id: nanoid(),
     sessionId,

@@ -18,8 +18,46 @@ const DIST_DIR = join(import.meta.dir, '../dist')
 const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? ''
 const GOOGLE_PLACES_BASE = 'https://places.googleapis.com'
 
+// Allowed WebSocket origins: Railway domain + localhost for dev
+const RAILWAY_DOMAIN = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+  : null
+const ALLOWED_ORIGINS = new Set(
+  [RAILWAY_DOMAIN, 'http://localhost:5173', 'http://localhost:3001'].filter(Boolean) as string[]
+)
+
+// Per-IP rate limiter for Google Maps proxy (30 req/min)
+const RATE_LIMIT_MAX = 30
+const RATE_LIMIT_WINDOW_MS = 60_000
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return true
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false
+  entry.count++
+  return true
+}
+
 // Maps each WebSocket to the sessionId it belongs to
 const wsToSession = new Map<ServerWebSocket<unknown>, string>()
+
+// Input sanitization helpers
+function sanitize(s: unknown, maxLen: number): string {
+  if (typeof s !== 'string') return ''
+  return s.slice(0, maxLen)
+}
+
+function validCoords(lat: unknown, lng: unknown): boolean {
+  return (
+    typeof lat === 'number' && isFinite(lat) && lat >= -90 && lat <= 90 &&
+    typeof lng === 'number' && isFinite(lng) && lng >= -180 && lng <= 180
+  )
+}
 
 Bun.serve({
   port: PORT,
@@ -27,8 +65,12 @@ Bun.serve({
   fetch(req, server) {
     const url = new URL(req.url)
 
-    // WebSocket upgrade
+    // WebSocket upgrade — validate origin
     if (url.pathname === '/ws') {
+      const origin = req.headers.get('origin') ?? ''
+      if (!ALLOWED_ORIGINS.has(origin)) {
+        return new Response('Forbidden', { status: 403 })
+      }
       const upgraded = server.upgrade(req)
       if (!upgraded) return new Response('WebSocket upgrade failed', { status: 400 })
       return undefined as unknown as Response
@@ -36,6 +78,10 @@ Bun.serve({
 
     // Google Maps proxy: /api/places/* → https://places.googleapis.com/v1/places/*
     if (url.pathname.startsWith('/api/places')) {
+      // Handle CORS preflight (dev proxy sends these)
+      if (req.method === 'OPTIONS') {
+        return new Response(null, { status: 204 })
+      }
       return proxyGoogleMaps(req, url)
     }
 
@@ -49,6 +95,12 @@ Bun.serve({
     },
 
     message(ws, rawMessage) {
+      // Reject oversized messages (64KB limit)
+      if (typeof rawMessage === 'string' && rawMessage.length > 65536) {
+        send(ws as unknown as WebSocket, { type: 'error', message: 'Message too large.' })
+        return
+      }
+
       let msg: ClientMessage
       try {
         msg = JSON.parse(rawMessage as string) as ClientMessage
@@ -68,12 +120,15 @@ Bun.serve({
         }
 
         case 'join_session': {
-          const result = joinSession(msg.sessionId, ws as unknown as WebSocket, msg.userId, msg.userName)
+          const cleanSessionId = sanitize(msg.sessionId, 20).toUpperCase()
+          const cleanUserId = sanitize(msg.userId, 50)
+          const cleanUserName = sanitize(msg.userName, 50)
+          const result = joinSession(cleanSessionId, ws as unknown as WebSocket, cleanUserId, cleanUserName)
           if (!result) {
             send(ws as unknown as WebSocket, { type: 'error', message: 'Session not found. Check the code and try again.' })
             return
           }
-          wsToSession.set(ws, msg.sessionId)
+          wsToSession.set(ws, cleanSessionId)
           const { state, user, isNew } = result
 
           send(ws as unknown as WebSocket, {
@@ -91,15 +146,26 @@ Bun.serve({
 
         case 'update_location': {
           if (!sessionId) break
-          updateLocation(sessionId, msg.lat, msg.lng, msg.label)
+          if (!validCoords(msg.lat, msg.lng)) break
+          const label = sanitize(msg.label, 200)
+          updateLocation(sessionId, msg.lat, msg.lng, label)
           const state = getSession(sessionId)!
-          broadcast(state, { type: 'location_updated', lat: msg.lat, lng: msg.lng, label: msg.label })
+          broadcast(state, { type: 'location_updated', lat: msg.lat, lng: msg.lng, label })
           break
         }
 
         case 'add_restaurant': {
           if (!sessionId) break
-          const restaurant = addRestaurant(sessionId, msg.inputName, msg.foundName, msg.address, msg.lat, msg.lng, msg.addedBy)
+          if (!validCoords(msg.lat, msg.lng)) break
+          const restaurant = addRestaurant(
+            sessionId,
+            sanitize(msg.inputName, 200),
+            sanitize(msg.foundName, 200),
+            sanitize(msg.address, 300),
+            msg.lat,
+            msg.lng,
+            sanitize(msg.addedBy, 50),
+          )
           if (!restaurant) break
           const state = getSession(sessionId)!
           broadcast(state, { type: 'restaurant_added', restaurant })
@@ -108,7 +174,9 @@ Bun.serve({
 
         case 'cast_vote': {
           if (!sessionId) break
-          const vote = castVote(sessionId, msg.restaurantId, msg.userId, msg.score)
+          const score = msg.score
+          if (score !== 1 && score !== 2 && score !== 3) break
+          const vote = castVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50), score)
           if (!vote) break
           const state = getSession(sessionId)!
           broadcast(state, { type: 'vote_cast', vote })
@@ -128,6 +196,12 @@ Bun.serve({
 console.log(`Server running on http://localhost:${PORT}`)
 
 async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
+  // Per-IP rate limiting
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1'
+  if (!checkRateLimit(ip)) {
+    return new Response('Too Many Requests', { status: 429 })
+  }
+
   const googlePath = url.pathname.replace('/api/places', '/v1/places')
   const googleUrl = GOOGLE_PLACES_BASE + googlePath + url.search
 
@@ -153,7 +227,6 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
     status: upstream.status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
     },
   })
 }
