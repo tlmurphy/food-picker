@@ -111,8 +111,8 @@ export default function Join() {
               className="input"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="ABC123"
-              maxLength={6}
+              placeholder="AB12CD34EF"
+              maxLength={10}
               onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
               autoFocus
             />
