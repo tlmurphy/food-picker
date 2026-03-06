@@ -238,7 +238,17 @@ button { font-family: inherit; }
   flex-direction: column;
   padding: 16px;
   gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.list-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* ─── View Map Button ────────────────────────────── */

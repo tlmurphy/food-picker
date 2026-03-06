@@ -131,22 +131,24 @@ export default function Game() {
                 userId={user.id}
                 onAdd={addRestaurant}
               />
-              {restaurants.length > 0 && (
-                <button className="btn btn-map" onClick={() => setMapOpen(true)}>
-                  View Map
-                </button>
-              )}
-              <RestaurantList
-                restaurants={restaurants}
-                users={users}
-                currentUserId={user.id}
-                onVote={castVote}
-              />
-              {!pickButtonDisabled && (
-                <button className="btn pick-button" onClick={handlePickClick}>
-                  {pickButtonLabel}
-                </button>
-              )}
+              <div className="list-scroll">
+                {restaurants.length > 0 && (
+                  <button className="btn btn-map" onClick={() => setMapOpen(true)}>
+                    View Map
+                  </button>
+                )}
+                <RestaurantList
+                  restaurants={restaurants}
+                  users={users}
+                  currentUserId={user.id}
+                  onVote={castVote}
+                />
+                {!pickButtonDisabled && (
+                  <button className="btn pick-button" onClick={handlePickClick}>
+                    {pickButtonLabel}
+                  </button>
+                )}
+              </div>
             </>
           )}
         </section>
