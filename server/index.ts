@@ -36,22 +36,31 @@ let globalRateLimit = { count: 0, resetAt: Date.now() + RATE_LIMIT_WINDOW_MS }
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
-  // Global check
+  // Reset global window if expired
   if (now > globalRateLimit.resetAt) {
     globalRateLimit = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
   }
   if (globalRateLimit.count >= GLOBAL_RATE_LIMIT_MAX) return false
-  globalRateLimit.count++
   // Per-IP check (use last IP in chain — Railway appends real client IP at end)
   const entry = rateLimitMap.get(ip)
+  if (entry && now <= entry.resetAt && entry.count >= RATE_LIMIT_MAX) return false
+  // Both limits pass — increment
+  globalRateLimit.count++
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-    return true
+  } else {
+    entry.count++
   }
-  if (entry.count >= RATE_LIMIT_MAX) return false
-  entry.count++
   return true
 }
+
+// Periodically evict expired per-IP rate limit entries to prevent unbounded growth
+setInterval(() => {
+  const now = Date.now()
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip)
+  }
+}, RATE_LIMIT_WINDOW_MS)
 
 // Maps each WebSocket to the sessionId it belongs to
 const wsToSession = new Map<ServerWebSocket<unknown>, string>()

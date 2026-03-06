@@ -60,10 +60,14 @@ export async function autocompleteRestaurant(
   })
 }
 
-export async function getPlaceLocation(placeId: string): Promise<GeocodedLocation> {
+async function fetchPlaceData(placeId: string) {
   const response = await fetch(`/api/places/${placeId}`, { headers: sessionHeader() })
   if (!response.ok) throw new Error(`Place details error: ${response.status}`)
-  const data = await response.json()
+  return response.json()
+}
+
+export async function getPlaceLocation(placeId: string): Promise<GeocodedLocation> {
+  const data = await fetchPlaceData(placeId)
   return {
     lat: data.location.latitude,
     lng: data.location.longitude,
@@ -72,9 +76,7 @@ export async function getPlaceLocation(placeId: string): Promise<GeocodedLocatio
 }
 
 export async function getRestaurantPlaceDetails(placeId: string): Promise<PlaceResult> {
-  const response = await fetch(`/api/places/${placeId}`, { headers: sessionHeader() })
-  if (!response.ok) throw new Error(`Place details error: ${response.status}`)
-  const data = await response.json()
+  const data = await fetchPlaceData(placeId)
   return {
     lat: data.location.latitude,
     lng: data.location.longitude,
