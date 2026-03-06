@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24",
+    "bun": ">=1"
+  },
   "scripts": {
     "dev:client": "vite",
     "dev:server": "bun run server/index.ts",
