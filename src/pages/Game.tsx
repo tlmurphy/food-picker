@@ -4,6 +4,7 @@ import { useSession } from '../hooks/useSession'
 import { useRestaurants } from '../hooks/useRestaurants'
 import { useUser } from '../hooks/useUser'
 import { socket } from '../lib/socket'
+import { setApiSessionId } from '../lib/googlemaps'
 import MapView from '../components/MapView'
 import RestaurantList from '../components/RestaurantList'
 import AddRestaurant from '../components/AddRestaurant'
@@ -20,6 +21,10 @@ export default function Game() {
     sessionId,
     userIds
   )
+
+  useEffect(() => {
+    if (sessionId) setApiSessionId(sessionId)
+  }, [sessionId])
 
   // Rejoin session on direct page load / refresh (user already in localStorage)
   useEffect(() => {

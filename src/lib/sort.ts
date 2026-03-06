@@ -1,11 +1,11 @@
-import type { RestaurantWithVotes } from '../types'
+import type { Restaurant } from '../types'
 
 const NO_VOTE_PENALTY = 10
 
 export function sortRestaurants(
-  restaurants: RestaurantWithVotes[],
+  restaurants: Restaurant[],
   userIds: string[]
-): RestaurantWithVotes[] {
+): Restaurant[] {
   return [...restaurants].sort((a, b) => {
     const scoreA = computeScore(a, userIds)
     const scoreB = computeScore(b, userIds)
@@ -13,7 +13,7 @@ export function sortRestaurants(
   })
 }
 
-function computeScore(restaurant: RestaurantWithVotes, userIds: string[]): number {
+function computeScore(restaurant: Restaurant, userIds: string[]): number {
   return userIds.reduce((sum, userId) => {
     const vote = restaurant.votes.find((v) => v.userId === userId)
     return sum + (vote?.score ?? NO_VOTE_PENALTY)
@@ -21,9 +21,9 @@ function computeScore(restaurant: RestaurantWithVotes, userIds: string[]): numbe
 }
 
 export function checkAgreement(
-  restaurants: RestaurantWithVotes[],
+  restaurants: Restaurant[],
   userIds: string[]
-): RestaurantWithVotes | null {
+): Restaurant | null {
   if (userIds.length < 2) return null
 
   for (const restaurant of restaurants) {

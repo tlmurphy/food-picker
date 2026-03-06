@@ -12,7 +12,10 @@ export interface SessionState {
 const store = new Map<string, SessionState>()
 const SESSION_CLEANUP_DELAY_MS = 30_000
 
-export function createSession(): string {
+const MAX_SESSIONS = 20
+
+export function createSession(): string | null {
+  if (store.size >= MAX_SESSIONS) return null
   const id = nanoid(10).toUpperCase()
   store.set(id, {
     session: { id, locationLat: null, locationLng: null, locationLabel: null },

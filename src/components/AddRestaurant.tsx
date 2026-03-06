@@ -13,7 +13,7 @@ interface Props {
     lat: number,
     lng: number,
     addedBy: string
-  ) => Promise<unknown>
+  ) => void
 }
 
 export default function AddRestaurant({ session, userId, onAdd }: Props) {
@@ -56,7 +56,7 @@ export default function AddRestaurant({ session, userId, onAdd }: Props) {
     setError('')
     try {
       const details = await getRestaurantPlaceDetails(placeId)
-      await onAdd(suggestionText, details.name, details.address, details.lat, details.lng, userId)
+      onAdd(suggestionText, details.name, details.address, details.lat, details.lng, userId)
     } catch {
       setError('Something went wrong. Check your connection and try again.')
     } finally {

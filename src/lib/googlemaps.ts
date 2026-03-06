@@ -1,52 +1,15 @@
 import type { PlaceResult } from '../types'
 
+let _sessionId = ''
+export function setApiSessionId(id: string) { _sessionId = id }
+function sessionHeader(): Record<string, string> {
+  return _sessionId ? { 'X-Session-Id': _sessionId } : {}
+}
+
 export interface GeocodedLocation {
   lat: number
   lng: number
   label: string
-}
-
-export async function searchNearbyRestaurant(
-  name: string,
-  lat: number,
-  lng: number,
-  radiusMeters = 50000 // ~31 miles (Google's max for circle locationBias)
-): Promise<PlaceResult | null> {
-  const response = await fetch('/api/places:searchText', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      textQuery: name,
-      includedType: 'restaurant',
-      locationBias: {
-        circle: {
-          center: { latitude: lat, longitude: lng },
-          radius: radiusMeters,
-        },
-      },
-      pageSize: 10,
-    }),
-  })
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    console.error('Google Places API error body:', err)
-    throw new Error(`Google Places API error: ${response.status}`)
-  }
-
-  const data = await response.json()
-  const best = data.places?.[0]
-
-  console.log('Google Places search results:', data.places)
-
-  if (!best) return null
-
-  return {
-    lat: best.location.latitude,
-    lng: best.location.longitude,
-    name: best.displayName?.text ?? name,
-    address: best.formattedAddress ?? '',
-  }
 }
 
 type PlaceSuggestion = { placeId: string; text: string; distanceMeters?: number }
@@ -60,7 +23,7 @@ type AutocompleteBody = {
 async function fetchAutocomplete(body: AutocompleteBody): Promise<PlaceSuggestion[]> {
   const response = await fetch('/api/places:autocomplete', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...sessionHeader() },
     body: JSON.stringify(body),
   })
   if (!response.ok) throw new Error(`Autocomplete error: ${response.status}`)
@@ -98,7 +61,7 @@ export async function autocompleteRestaurant(
 }
 
 export async function getPlaceLocation(placeId: string): Promise<GeocodedLocation> {
-  const response = await fetch(`/api/places/${placeId}`)
+  const response = await fetch(`/api/places/${placeId}`, { headers: sessionHeader() })
   if (!response.ok) throw new Error(`Place details error: ${response.status}`)
   const data = await response.json()
   return {
@@ -109,7 +72,7 @@ export async function getPlaceLocation(placeId: string): Promise<GeocodedLocatio
 }
 
 export async function getRestaurantPlaceDetails(placeId: string): Promise<PlaceResult> {
-  const response = await fetch(`/api/places/${placeId}`)
+  const response = await fetch(`/api/places/${placeId}`, { headers: sessionHeader() })
   if (!response.ok) throw new Error(`Place details error: ${response.status}`)
   const data = await response.json()
   return {

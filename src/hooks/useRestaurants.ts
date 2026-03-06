@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { socket } from '../lib/socket'
 import { sortRestaurants, checkAgreement } from '../lib/sort'
-import type { RestaurantWithVotes } from '../types'
+import type { Restaurant } from '../types'
 
 export function useRestaurants(sessionId: string | undefined, userIds: string[]) {
-  const [restaurants, setRestaurants] = useState<RestaurantWithVotes[]>([])
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [newestId, setNewestId] = useState<string | null>(null)
-  const [agreed, setAgreed] = useState<RestaurantWithVotes | null>(null)
+  const [agreed, setAgreed] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
 
   const userIdsKey = userIds.join(',')
@@ -58,7 +58,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, userIdsKey])
 
-  async function addRestaurant(
+  function addRestaurant(
     inputName: string,
     foundName: string,
     address: string,
@@ -69,7 +69,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
     socket.send({ type: 'add_restaurant', inputName, foundName, address, lat, lng, addedBy })
   }
 
-  async function castVote(restaurantId: string, userId: string, score: number) {
+  function castVote(restaurantId: string, userId: string, score: number) {
     socket.send({ type: 'cast_vote', restaurantId, userId, score })
   }
 

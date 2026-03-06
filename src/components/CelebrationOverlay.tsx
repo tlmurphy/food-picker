@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import { motion } from 'framer-motion'
-import type { RestaurantWithVotes } from '../types'
+import type { Restaurant } from '../types'
 
 interface Props {
-  restaurant: RestaurantWithVotes
+  restaurant: Restaurant
 }
 
 export default function CelebrationOverlay({ restaurant }: Props) {

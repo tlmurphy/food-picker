@@ -26,13 +26,23 @@ const ALLOWED_ORIGINS = new Set(
   [RAILWAY_DOMAIN, 'http://localhost:5173', 'http://localhost:3001'].filter(Boolean) as string[]
 )
 
-// Per-IP rate limiter for Google Maps proxy (30 req/min)
-const RATE_LIMIT_MAX = 30
+// Per-IP rate limiter for Google Maps proxy (100 req/min per IP)
+const RATE_LIMIT_MAX = 100
 const RATE_LIMIT_WINDOW_MS = 60_000
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+// Global rate limit: 200 req/min total (backstop against IP spoofing)
+const GLOBAL_RATE_LIMIT_MAX = 200
+let globalRateLimit = { count: 0, resetAt: Date.now() + RATE_LIMIT_WINDOW_MS }
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
+  // Global check
+  if (now > globalRateLimit.resetAt) {
+    globalRateLimit = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
+  }
+  if (globalRateLimit.count >= GLOBAL_RATE_LIMIT_MAX) return false
+  globalRateLimit.count++
+  // Per-IP check (use last IP in chain — Railway appends real client IP at end)
   const entry = rateLimitMap.get(ip)
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
@@ -45,6 +55,10 @@ function checkRateLimit(ip: string): boolean {
 
 // Maps each WebSocket to the sessionId it belongs to
 const wsToSession = new Map<ServerWebSocket<unknown>, string>()
+
+// Total open WebSocket connections cap
+const MAX_WS_CONNECTIONS = 50
+let wsConnectionCount = 0
 
 // Per-connection WS message rate limiter (60 messages/minute)
 const WS_RATE_LIMIT_MAX = 60
@@ -95,14 +109,22 @@ Bun.serve({
 
   websocket: {
     open(ws) {
+      if (wsConnectionCount >= MAX_WS_CONNECTIONS) {
+        ws.close(1013, 'Server at capacity')
+        return
+      }
+      wsConnectionCount++
       console.log('[ws] connection opened')
     },
 
     message(ws, rawMessage) {
       // Per-connection rate limit
       const now = Date.now()
-      const wsLimit = wsRateLimit.get(ws) ?? { count: 0, resetAt: now + 60_000 }
-      if (now > wsLimit.resetAt) { wsLimit.count = 0; wsLimit.resetAt = now + 60_000 }
+      const wsLimit = wsRateLimit.get(ws) ?? { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
+      if (now > wsLimit.resetAt) {
+        wsLimit.count = 0
+        wsLimit.resetAt = now + RATE_LIMIT_WINDOW_MS
+      }
       wsLimit.count++
       wsRateLimit.set(ws, wsLimit)
       if (wsLimit.count > WS_RATE_LIMIT_MAX) {
@@ -129,6 +151,10 @@ Bun.serve({
       switch (msg.type) {
         case 'create_session': {
           const id = createSession()
+          if (!id) {
+            send(ws as unknown as WebSocket, { type: 'error', message: 'Server at capacity. Try again later.' })
+            break
+          }
           wsToSession.set(ws, id)
           send(ws as unknown as WebSocket, { type: 'session_created', sessionId: id })
           break
@@ -189,9 +215,8 @@ Bun.serve({
 
         case 'cast_vote': {
           if (!sessionId) break
-          const score = msg.score
-          if (score !== 1 && score !== 2 && score !== 3) break
-          const vote = castVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50), score)
+          if (msg.score !== 1 && msg.score !== 2 && msg.score !== 3) break
+          const vote = castVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50), msg.score)
           if (!vote) break
           const state = getSession(sessionId)!
           broadcast(state, { type: 'vote_cast', vote })
@@ -201,6 +226,7 @@ Bun.serve({
     },
 
     close(ws) {
+      wsConnectionCount = Math.max(0, wsConnectionCount - 1)
       console.log('[ws] connection closed')
       wsToSession.delete(ws)
       disconnectSocket(ws as unknown as WebSocket)
@@ -211,8 +237,22 @@ Bun.serve({
 console.log(`Server running on http://localhost:${PORT}`)
 
 async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
-  // Per-IP rate limiting
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1'
+  // Origin check (same policy as WebSocket) — null origin means same-origin fetch (allowed)
+  const origin = req.headers.get('origin')
+  if (origin !== null && !ALLOWED_ORIGINS.has(origin)) {
+    return new Response('Forbidden', { status: 403 })
+  }
+
+  // Session validation — only active WS session holders may use the proxy
+  const sessionId = req.headers.get('x-session-id') ?? ''
+  if (!getSession(sessionId.toUpperCase())) {
+    return new Response('Forbidden', { status: 403 })
+  }
+
+  // Per-IP rate limiting (use last IP in chain — Railway appends real client IP at end)
+  const forwarded = req.headers.get('x-forwarded-for') ?? ''
+  const ips = forwarded.split(',').map((s) => s.trim()).filter(Boolean)
+  const ip = ips[ips.length - 1] ?? '127.0.0.1'
   if (!checkRateLimit(ip)) {
     return new Response('Too Many Requests', { status: 429 })
   }
@@ -220,11 +260,13 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
   const googlePath = url.pathname.replace('/api/places', '/v1/places')
   const googleUrl = GOOGLE_PLACES_BASE + googlePath + url.search
 
-  let fieldMask = 'location,displayName,formattedAddress'
+  let fieldMask: string
   if (url.pathname.includes(':autocomplete')) {
     fieldMask = 'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.distanceMeters'
   } else if (url.pathname.includes(':searchText')) {
     fieldMask = 'places.displayName,places.formattedAddress,places.location'
+  } else {
+    fieldMask = 'location,displayName,formattedAddress'
   }
 
   const body = req.method !== 'GET' ? await req.text() : undefined

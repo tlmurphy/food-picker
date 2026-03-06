@@ -1,12 +1,12 @@
 import { AnimatePresence } from 'framer-motion'
 import RestaurantCard from './RestaurantCard'
-import type { RestaurantWithVotes, SessionUser } from '../types'
+import type { Restaurant, SessionUser } from '../types'
 
 interface Props {
-  restaurants: RestaurantWithVotes[]
+  restaurants: Restaurant[]
   users: SessionUser[]
   currentUserId: string
-  onVote: (restaurantId: string, userId: string, score: number) => Promise<void>
+  onVote: (restaurantId: string, userId: string, score: number) => void
 }
 
 export default function RestaurantList({ restaurants, users, currentUserId, onVote }: Props) {

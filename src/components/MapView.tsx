@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { Session, RestaurantWithVotes } from '../types'
+import type { Session, Restaurant } from '../types'
 
 // Fix Leaflet's broken default icon path in bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
@@ -48,7 +48,7 @@ function SetCenter({ lat, lng }: { lat: number; lng: number }) {
 
 interface MapViewProps {
   session: Session | null
-  restaurants: RestaurantWithVotes[]
+  restaurants: Restaurant[]
   newestId: string | null
 }
 

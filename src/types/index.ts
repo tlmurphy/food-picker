@@ -33,9 +33,6 @@ export interface Restaurant {
   votes: Vote[]
 }
 
-// Alias kept so sort.ts and components compile with zero logic changes
-export type RestaurantWithVotes = Restaurant
-
 export interface PlaceResult {
   lat: number
   lng: number

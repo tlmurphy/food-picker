@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
-import type { RestaurantWithVotes, SessionUser } from '../types'
+import type { Restaurant, SessionUser } from '../types'
 
 interface Props {
-  restaurant: RestaurantWithVotes
+  restaurant: Restaurant
   users: SessionUser[]
   currentUserId: string
   rank: number
-  onVote: (restaurantId: string, userId: string, score: number) => Promise<void>
+  onVote: (restaurantId: string, userId: string, score: number) => void
 }
 
 export default function RestaurantCard({ restaurant, users, currentUserId, rank, onVote }: Props) {
@@ -16,10 +16,6 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
     const v = restaurant.votes.find((vt) => vt.userId === u.id)
     return v?.score === 1
   })
-
-  async function handleVote(score: number) {
-    await onVote(restaurant.id, currentUserId, score)
-  }
 
   return (
     <motion.div
@@ -40,7 +36,7 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
             <button
               key={score}
               className={`vote-btn ${myVote?.score === score ? 'active' : ''}`}
-              onClick={() => handleVote(score)}
+              onClick={() => onVote(restaurant.id, currentUserId, score)}
               title={score === 1 ? 'Top pick' : score === 2 ? 'Okay' : 'Last resort'}
             >
               {score === 1 ? '🥇' : score === 2 ? '🥈' : '🥉'}
