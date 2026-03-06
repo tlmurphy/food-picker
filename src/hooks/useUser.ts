@@ -4,14 +4,16 @@ import type { SessionUser } from '../types'
 const STORAGE_KEY_PREFIX = 'food-picker-user-'
 
 export function useUser(sessionId: string | undefined) {
-  const [user, setUser] = useState<SessionUser | null>(null)
+  const [user, setUser] = useState<SessionUser | null>(() => {
+    if (!sessionId) return null
+    const stored = localStorage.getItem(STORAGE_KEY_PREFIX + sessionId)
+    return stored ? (JSON.parse(stored) as SessionUser) : null
+  })
 
   useEffect(() => {
     if (!sessionId) return
     const stored = localStorage.getItem(STORAGE_KEY_PREFIX + sessionId)
-    if (stored) {
-      setUser(JSON.parse(stored) as SessionUser)
-    }
+    setUser(stored ? (JSON.parse(stored) as SessionUser) : null)
   }, [sessionId])
 
   function saveUser(sessionUser: SessionUser) {

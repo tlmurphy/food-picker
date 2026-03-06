@@ -34,10 +34,10 @@ export default function Game() {
   }, [sessionId, user?.id])
 
   useEffect(() => {
-    if (!user && !sessionLoading) {
+    if (!user) {
       navigate(`/?join=${sessionId}`, { replace: true })
     }
-  }, [user, sessionLoading, navigate, sessionId])
+  }, [user, navigate, sessionId])
 
   if (sessionLoading || restLoading) {
     return (
