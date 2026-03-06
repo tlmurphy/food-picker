@@ -29,19 +29,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-#root {
+html {
   height: 100%;
 }
 
 body {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   margin: 0;
-  min-width: 320px;
+}
+
+#root {
+  height: 100%;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -169,7 +171,6 @@ button { font-family: inherit; }
 }
 
 .game-header {
-  border-bottom: 4px solid hotpink; /* CACHE TEST - remove me */
   display: flex;
   align-items: center;
   justify-content: space-between;

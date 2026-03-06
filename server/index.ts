@@ -22,6 +22,7 @@ const GOOGLE_PLACES_BASE = 'https://places.googleapis.com'
 const RAILWAY_DOMAIN = process.env.RAILWAY_PUBLIC_DOMAIN
   ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
   : null
+const IS_DEV = !RAILWAY_DOMAIN
 const ALLOWED_ORIGINS = new Set(
   [RAILWAY_DOMAIN, 'http://localhost:5173', 'http://localhost:3001'].filter(Boolean) as string[]
 )
@@ -95,7 +96,7 @@ Bun.serve({
     // WebSocket upgrade — validate origin
     if (url.pathname === '/ws') {
       const origin = req.headers.get('origin') ?? ''
-      if (!ALLOWED_ORIGINS.has(origin)) {
+      if (!IS_DEV && !ALLOWED_ORIGINS.has(origin)) {
         return new Response('Forbidden', { status: 403 })
       }
       const upgraded = server.upgrade(req)
@@ -248,7 +249,7 @@ console.log(`Server running on http://localhost:${PORT}`)
 async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
   // Origin check (same policy as WebSocket) — null origin means same-origin fetch (allowed)
   const origin = req.headers.get('origin')
-  if (origin !== null && !ALLOWED_ORIGINS.has(origin)) {
+  if (!IS_DEV && origin !== null && !ALLOWED_ORIGINS.has(origin)) {
     return new Response('Forbidden', { status: 403 })
   }
 
