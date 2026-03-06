@@ -60,7 +60,11 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
       {restaurant.lat != null && restaurant.lng != null && (
         <a
           className="directions-link"
-          href={`https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`}
+          href={
+            /iPad|iPhone|iPod/.test(navigator.userAgent)
+              ? `maps://maps.apple.com/?daddr=${restaurant.lat},${restaurant.lng}`
+              : `https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`
+          }
           target="_blank"
           rel="noopener noreferrer"
           title="Get directions"
