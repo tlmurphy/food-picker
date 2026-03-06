@@ -10,7 +10,7 @@ export interface SessionState {
 }
 
 const store = new Map<string, SessionState>()
-const SESSION_CLEANUP_DELAY_MS = 30_000
+const SESSION_CLEANUP_DELAY_MS = 60_000
 
 const MAX_SESSIONS = 20
 
