@@ -169,6 +169,7 @@ button { font-family: inherit; }
 }
 
 .game-header {
+  border-bottom: 4px solid hotpink; /* CACHE TEST - remove me */
   display: flex;
   align-items: center;
   justify-content: space-between;
