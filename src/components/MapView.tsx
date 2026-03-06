@@ -1,18 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Session, Restaurant } from '../types'
 
-// Fix Leaflet's broken default icon path in bundlers
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
-
-const dropIcon = L.divIcon({
+const restaurantIcon = L.divIcon({
   className: 'pin-drop',
   html: `<div class="pin-drop-inner"><div class="pin-head"></div><div class="pin-shadow"></div></div>`,
   iconSize: [24, 36],
@@ -46,13 +38,32 @@ function SetCenter({ lat, lng }: { lat: number; lng: number }) {
   return null
 }
 
+const originIcon = L.divIcon({
+  className: 'origin-marker',
+  html: `<div class="origin-marker-inner"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+  popupAnchor: [0, -12],
+})
+
+function InvalidateSize({ visible }: { visible?: boolean }) {
+  const map = useMap()
+  useEffect(() => {
+    if (visible) {
+      setTimeout(() => map.invalidateSize(), 50)
+    }
+  }, [visible, map])
+  return null
+}
+
 interface MapViewProps {
   session: Session | null
   restaurants: Restaurant[]
   newestId: string | null
+  visible?: boolean
 }
 
-export default function MapView({ session, restaurants, newestId }: MapViewProps) {
+export default function MapView({ session, restaurants, newestId, visible }: MapViewProps) {
   const prevNewestId = useRef<string | null>(null)
 
   const center: [number, number] =
@@ -84,8 +95,18 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {session?.locationLat != null && session?.locationLng != null && !newestRestaurant && (
-          <SetCenter lat={session.locationLat} lng={session.locationLng} />
+        <InvalidateSize visible={visible} />
+
+        {session?.locationLat != null && session?.locationLng != null && (
+          <>
+            {!newestRestaurant && <SetCenter lat={session.locationLat} lng={session.locationLng} />}
+            <Marker position={[session.locationLat, session.locationLng]} icon={originIcon}>
+              <Popup>
+                <strong>Starting Point</strong>
+                {session.locationLabel && <><br />{session.locationLabel}</>}
+              </Popup>
+            </Marker>
+          </>
         )}
 
         {newestRestaurant?.lat != null && newestRestaurant?.lng != null && (
@@ -94,13 +115,20 @@ export default function MapView({ session, restaurants, newestId }: MapViewProps
 
         {restaurants.map((r) => {
           if (r.lat == null || r.lng == null) return null
-          const isNew = r.id === newestId
           return (
             <Marker
               key={r.id}
               position={[r.lat, r.lng]}
-              icon={isNew ? dropIcon : new L.Icon.Default()}
+              icon={restaurantIcon}
             >
+              <Tooltip
+                permanent
+                direction="top"
+                offset={[0, -36]}
+                className="restaurant-tooltip"
+              >
+                {r.foundName ?? r.inputName}
+              </Tooltip>
               <Popup>
                 <strong>{r.foundName ?? r.inputName}</strong>
                 {r.address && <><br />{r.address}</>}

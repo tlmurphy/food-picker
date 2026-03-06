@@ -48,7 +48,7 @@ export async function autocompleteRestaurant(
   input: string,
   lat: number,
   lng: number,
-  radiusMeters = 50000
+  radiusMeters = 10000
 ): Promise<PlaceSuggestion[]> {
   return fetchAutocomplete({
     input,

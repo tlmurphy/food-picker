@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useRestaurants } from '../hooks/useRestaurants'
@@ -21,6 +21,7 @@ export default function Game() {
     sessionId,
     userIds
   )
+  const [mapOpen, setMapOpen] = useState(false)
 
   useEffect(() => {
     if (sessionId) setApiSessionId(sessionId)
@@ -89,6 +90,11 @@ export default function Game() {
                 userId={user.id}
                 onAdd={addRestaurant}
               />
+              {restaurants.length > 0 && (
+                <button className="btn btn-map" onClick={() => setMapOpen(true)}>
+                  View Map
+                </button>
+              )}
               <RestaurantList
                 restaurants={restaurants}
                 users={users}
@@ -98,15 +104,21 @@ export default function Game() {
             </>
           )}
         </section>
+      </main>
 
-        <section className="map-panel">
+      {mapOpen && (
+        <div className="map-overlay">
+          <button className="btn btn-close-map" onClick={() => setMapOpen(false)}>
+            Close
+          </button>
           <MapView
             session={session}
             restaurants={restaurants}
             newestId={newestId}
+            visible={mapOpen}
           />
-        </section>
-      </main>
+        </div>
+      )}
 
       {agreed && <CelebrationOverlay restaurant={agreed} />}
     </div>
