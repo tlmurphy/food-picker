@@ -36,6 +36,7 @@ html, body, #root {
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -156,6 +157,7 @@ button { font-family: inherit; }
 /* ─── Game Layout ─────────────────────────────────── */
 .game-layout {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -196,6 +198,7 @@ button { font-family: inherit; }
 .players {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .player-chip {
@@ -573,13 +576,14 @@ button { font-family: inherit; }
 
   .list-panel {
     width: 100%;
-    height: 55vh;
+    flex: 1;
+    height: auto;
     border-right: none;
     border-top: 1px solid var(--border);
   }
 
   .map-panel {
-    height: 45vh;
+    height: 35vh;
     flex: none;
   }
 
