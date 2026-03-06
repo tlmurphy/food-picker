@@ -299,14 +299,22 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
 
 async function serveStatic(pathname: string): Promise<Response> {
   const safePath = pathname === '/' ? '/index.html' : pathname
+  const isHashed = safePath.startsWith('/assets/')
+  const cacheControl = isHashed
+    ? 'public, max-age=31536000, immutable'
+    : 'no-cache'
   try {
     const file = Bun.file(join(DIST_DIR, safePath))
     if (await file.exists()) {
-      return new Response(file)
+      return new Response(file, { headers: { 'Cache-Control': cacheControl } })
     }
     // SPA fallback
-    return new Response(Bun.file(join(DIST_DIR, 'index.html')))
+    return new Response(Bun.file(join(DIST_DIR, 'index.html')), {
+      headers: { 'Cache-Control': 'no-cache' },
+    })
   } catch {
-    return new Response(Bun.file(join(DIST_DIR, 'index.html')))
+    return new Response(Bun.file(join(DIST_DIR, 'index.html')), {
+      headers: { 'Cache-Control': 'no-cache' },
+    })
   }
 }
