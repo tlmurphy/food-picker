@@ -18,8 +18,14 @@ export interface Vote {
   id: string
   restaurantId: string
   userId: string
-  score: number
   votedAt: string
+}
+
+export interface Elimination {
+  round: number
+  restaurant1: string
+  restaurant2: string
+  winnerId: string
 }
 
 export interface Restaurant {
@@ -42,7 +48,8 @@ export type ClientMessage =
   | { type: 'join_session'; sessionId: string; userId: string; userName: string }
   | { type: 'update_location'; lat: number; lng: number; label: string }
   | { type: 'add_restaurant'; inputName: string; foundName: string; address: string; lat: number; lng: number; addedBy: string }
-  | { type: 'cast_vote'; restaurantId: string; userId: string; score: number }
+  | { type: 'cast_vote'; restaurantId: string; userId: string }
+  | { type: 'resolve_pick' }
 
 // Server → Client messages
 
@@ -54,3 +61,5 @@ export type ServerMessage =
   | { type: 'location_updated'; lat: number; lng: number; label: string }
   | { type: 'restaurant_added'; restaurant: Restaurant }
   | { type: 'vote_cast'; vote: Vote }
+  | { type: 'vote_removed'; restaurantId: string; userId: string }
+  | { type: 'pick_resolved'; winnerId: string; eliminations: Elimination[] }

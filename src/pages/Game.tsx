@@ -5,11 +5,13 @@ import { useRestaurants } from '../hooks/useRestaurants'
 import { useUser } from '../hooks/useUser'
 import { socket } from '../lib/socket'
 import { setApiSessionId } from '../lib/googlemaps'
+import { getTopTied } from '../lib/sort'
 import MapView from '../components/MapView'
 import RestaurantList from '../components/RestaurantList'
 import AddRestaurant from '../components/AddRestaurant'
 import LocationSetup from '../components/LocationSetup'
 import CelebrationOverlay from '../components/CelebrationOverlay'
+import CoinFlip from '../components/CoinFlip'
 
 export default function Game() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -17,11 +19,13 @@ export default function Game() {
   const { user } = useUser(sessionId)
   const { session, users, loading: sessionLoading, error: sessionError, updateLocation } = useSession(sessionId)
   const userIds = users.map((u) => u.id)
-  const { restaurants, newestId, agreed, loading: restLoading, addRestaurant, castVote } = useRestaurants(
+  const { restaurants, newestId, pickResult, loading: restLoading, addRestaurant, castVote, resolvePick, clearPickResult } = useRestaurants(
     sessionId,
     userIds
   )
   const [mapOpen, setMapOpen] = useState(false)
+  const [showCoinFlip, setShowCoinFlip] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   useEffect(() => {
     if (sessionId) setApiSessionId(sessionId)
@@ -39,6 +43,16 @@ export default function Game() {
       navigate(`/?join=${sessionId}`, { replace: true })
     }
   }, [user, navigate, sessionId])
+
+  // Handle pick result from server
+  useEffect(() => {
+    if (!pickResult) return
+    if (pickResult.eliminations.length > 0) {
+      setShowCoinFlip(true)
+    } else {
+      setShowCelebration(true)
+    }
+  }, [pickResult])
 
   if (sessionLoading || restLoading) {
     return (
@@ -62,11 +76,38 @@ export default function Game() {
   if (!user) return null
 
   const hasLocation = session?.locationLat != null && session?.locationLng != null
+  const { top, maxVotes } = getTopTied(restaurants)
+
+  const winnerRestaurant = pickResult
+    ? restaurants.find((r) => r.id === pickResult.winnerId)
+    : null
+
+  let pickButtonLabel = ''
+  let pickButtonDisabled = true
+  if (maxVotes > 0) {
+    pickButtonDisabled = false
+    pickButtonLabel = top.length === 1 ? 'Pick Now!' : 'Coin Flip!'
+  }
+
+  function handlePickClick() {
+    resolvePick()
+  }
+
+  function handleCoinFlipComplete() {
+    setShowCoinFlip(false)
+    setShowCelebration(true)
+  }
+
+  function handleDismiss() {
+    setShowCelebration(false)
+    setShowCoinFlip(false)
+    clearPickResult()
+  }
 
   return (
     <div className="game-layout">
       <header className="game-header">
-        <h2 className="game-title">🍔 Food Picker</h2>
+        <h2 className="game-title">Food Picker</h2>
         <div className="session-info">
           <span className="session-badge">#{sessionId}</span>
           <div className="players">
@@ -101,6 +142,11 @@ export default function Game() {
                 currentUserId={user.id}
                 onVote={castVote}
               />
+              {!pickButtonDisabled && (
+                <button className="btn pick-button" onClick={handlePickClick}>
+                  {pickButtonLabel}
+                </button>
+              )}
             </>
           )}
         </section>
@@ -120,7 +166,17 @@ export default function Game() {
         </div>
       )}
 
-      {agreed && <CelebrationOverlay restaurant={agreed} />}
+      {showCoinFlip && pickResult && (
+        <CoinFlip
+          eliminations={pickResult.eliminations}
+          restaurants={restaurants}
+          onComplete={handleCoinFlipComplete}
+        />
+      )}
+
+      {showCelebration && winnerRestaurant && (
+        <CelebrationOverlay restaurant={winnerRestaurant} onDismiss={handleDismiss} />
+      )}
     </div>
   )
 }

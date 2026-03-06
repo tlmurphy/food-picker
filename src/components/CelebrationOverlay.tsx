@@ -5,9 +5,10 @@ import type { Restaurant } from '../types'
 
 interface Props {
   restaurant: Restaurant
+  onDismiss: () => void
 }
 
-export default function CelebrationOverlay({ restaurant }: Props) {
+export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
   const fired = useRef(false)
 
   useEffect(() => {
@@ -40,7 +41,9 @@ export default function CelebrationOverlay({ restaurant }: Props) {
 
   const directionsUrl =
     restaurant.lat != null && restaurant.lng != null
-      ? `https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`
+      ? /iPad|iPhone|iPod/.test(navigator.userAgent)
+        ? `maps://maps.apple.com/?daddr=${restaurant.lat},${restaurant.lng}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`
       : null
 
   return (
@@ -52,7 +55,7 @@ export default function CelebrationOverlay({ restaurant }: Props) {
     >
       <div className="celebration-card">
         <div className="celebration-emoji">🎉</div>
-        <h2>You both agree!</h2>
+        <h2>It's decided!</h2>
         <p className="celebration-name">{restaurant.foundName ?? restaurant.inputName}</p>
         {restaurant.address && <p className="celebration-address">{restaurant.address}</p>}
 
@@ -63,9 +66,13 @@ export default function CelebrationOverlay({ restaurant }: Props) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            🗺️ Get Directions
+            Get Directions
           </a>
         )}
+
+        <button className="btn celebration-dismiss" onClick={onDismiss}>
+          Back to list
+        </button>
       </div>
     </motion.div>
   )

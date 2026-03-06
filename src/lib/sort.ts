@@ -1,38 +1,24 @@
 import type { Restaurant } from '../types'
 
-const NO_VOTE_PENALTY = 10
-
 export function sortRestaurants(
   restaurants: Restaurant[],
-  userIds: string[]
+  _userIds: string[]
 ): Restaurant[] {
   return [...restaurants].sort((a, b) => {
-    const scoreA = computeScore(a, userIds)
-    const scoreB = computeScore(b, userIds)
-    return scoreA - scoreB
+    // More votes = ranked higher (descending)
+    const diff = b.votes.length - a.votes.length
+    if (diff !== 0) return diff
+    // Tiebreaker: earliest first vote
+    const aFirst = a.votes.length > 0 ? a.votes[0].votedAt : a.addedAt
+    const bFirst = b.votes.length > 0 ? b.votes[0].votedAt : b.addedAt
+    return aFirst.localeCompare(bFirst)
   })
 }
 
-function computeScore(restaurant: Restaurant, userIds: string[]): number {
-  return userIds.reduce((sum, userId) => {
-    const vote = restaurant.votes.find((v) => v.userId === userId)
-    return sum + (vote?.score ?? NO_VOTE_PENALTY)
-  }, 0)
-}
-
-export function checkAgreement(
-  restaurants: Restaurant[],
-  userIds: string[]
-): Restaurant | null {
-  if (userIds.length < 2) return null
-
-  for (const restaurant of restaurants) {
-    const allVotedOne = userIds.every((userId) => {
-      const vote = restaurant.votes.find((v) => v.userId === userId)
-      return vote?.score === 1
-    })
-    if (allVotedOne) return restaurant
-  }
-
-  return null
+export function getTopTied(restaurants: Restaurant[]): { top: Restaurant[]; maxVotes: number } {
+  const withVotes = restaurants.filter((r) => r.votes.length > 0)
+  if (withVotes.length === 0) return { top: [], maxVotes: 0 }
+  const maxVotes = Math.max(...withVotes.map((r) => r.votes.length))
+  const top = withVotes.filter((r) => r.votes.length === maxVotes)
+  return { top, maxVotes }
 }

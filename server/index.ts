@@ -8,7 +8,8 @@ import {
   disconnectSocket,
   updateLocation,
   addRestaurant,
-  castVote,
+  toggleVote,
+  resolvePick,
   broadcast,
   send,
 } from './session'
@@ -225,11 +226,23 @@ Bun.serve({
 
         case 'cast_vote': {
           if (!sessionId) break
-          if (msg.score !== 1 && msg.score !== 2 && msg.score !== 3) break
-          const vote = castVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50), msg.score)
-          if (!vote) break
+          const result = toggleVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50))
+          if (!result) break
           const state = getSession(sessionId)!
-          broadcast(state, { type: 'vote_cast', vote })
+          if (result.action === 'added') {
+            broadcast(state, { type: 'vote_cast', vote: result.vote })
+          } else {
+            broadcast(state, { type: 'vote_removed', restaurantId: result.restaurantId, userId: result.userId })
+          }
+          break
+        }
+
+        case 'resolve_pick': {
+          if (!sessionId) break
+          const pickResult = resolvePick(sessionId)
+          if (!pickResult) break
+          const state = getSession(sessionId)!
+          broadcast(state, { type: 'pick_resolved', winnerId: pickResult.winnerId, eliminations: pickResult.eliminations })
           break
         }
       }

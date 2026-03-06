@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import type { Session, SessionUser, Restaurant, Vote, ServerMessage } from './types'
+import type { Session, SessionUser, Restaurant, Vote, Elimination, ServerMessage } from './types'
 
 export interface SessionState {
   session: Session
@@ -119,31 +119,79 @@ export function addRestaurant(
   return restaurant
 }
 
-export function castVote(
+export function toggleVote(
   sessionId: string,
   restaurantId: string,
-  userId: string,
-  score: number
-): Vote | null {
+  userId: string
+): { action: 'added'; vote: Vote } | { action: 'removed'; restaurantId: string; userId: string } | null {
   const state = store.get(sessionId)
   if (!state) return null
   const restaurant = state.restaurants.find((r) => r.id === restaurantId)
   if (!restaurant) return null
 
   const existingIndex = restaurant.votes.findIndex((v) => v.userId === userId)
+  if (existingIndex >= 0) {
+    restaurant.votes.splice(existingIndex, 1)
+    return { action: 'removed', restaurantId, userId }
+  }
+
   const vote: Vote = {
-    id: existingIndex >= 0 ? restaurant.votes[existingIndex].id : nanoid(),
+    id: nanoid(),
     restaurantId,
     userId,
-    score,
     votedAt: new Date().toISOString(),
   }
-  if (existingIndex >= 0) {
-    restaurant.votes[existingIndex] = vote
-  } else {
-    restaurant.votes.push(vote)
+  restaurant.votes.push(vote)
+  return { action: 'added', vote }
+}
+
+export function resolvePick(
+  sessionId: string
+): { winnerId: string; eliminations: Elimination[] } | null {
+  const state = store.get(sessionId)
+  if (!state) return null
+
+  const withVotes = state.restaurants.filter((r) => r.votes.length > 0)
+  if (withVotes.length === 0) return null
+
+  const maxVotes = Math.max(...withVotes.map((r) => r.votes.length))
+  const topTied = withVotes.filter((r) => r.votes.length === maxVotes)
+
+  if (topTied.length === 1) {
+    return { winnerId: topTied[0].id, eliminations: [] }
   }
-  return vote
+
+  // Coin flip elimination bracket
+  const eliminations: Elimination[] = []
+  let remaining = [...topTied]
+  let round = 1
+
+  while (remaining.length > 1) {
+    const nextRound: Restaurant[] = []
+    for (let i = 0; i < remaining.length; i += 2) {
+      if (i + 1 >= remaining.length) {
+        // Odd one out gets a bye
+        nextRound.push(remaining[i])
+        continue
+      }
+      const r1 = remaining[i]
+      const r2 = remaining[i + 1]
+      const randomBytes = new Uint32Array(1)
+      crypto.getRandomValues(randomBytes)
+      const winner = randomBytes[0] % 2 === 0 ? r1 : r2
+      eliminations.push({
+        round,
+        restaurant1: r1.id,
+        restaurant2: r2.id,
+        winnerId: winner.id,
+      })
+      nextRound.push(winner)
+    }
+    remaining = nextRound
+    round++
+  }
+
+  return { winnerId: remaining[0].id, eliminations }
 }
 
 export function broadcast(state: SessionState, message: ServerMessage, exclude?: WebSocket): void {

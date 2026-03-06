@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import { socket } from '../lib/socket'
-import { sortRestaurants, checkAgreement } from '../lib/sort'
-import type { Restaurant } from '../types'
+import { sortRestaurants } from '../lib/sort'
+import type { Restaurant, Elimination } from '../types'
+
+export interface PickResult {
+  winnerId: string
+  eliminations: Elimination[]
+}
 
 export function useRestaurants(sessionId: string | undefined, userIds: string[]) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [newestId, setNewestId] = useState<string | null>(null)
-  const [agreed, setAgreed] = useState<Restaurant | null>(null)
+  const [pickResult, setPickResult] = useState<PickResult | null>(null)
   const [loading, setLoading] = useState(true)
 
   const userIdsKey = userIds.join(',')
@@ -19,7 +24,6 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
         case 'session_state': {
           const sorted = sortRestaurants(msg.restaurants, userIds)
           setRestaurants(sorted)
-          setAgreed(checkAgreement(sorted, userIds))
           setLoading(false)
           break
         }
@@ -30,9 +34,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
           setRestaurants((prev) => {
             if (prev.some((r) => r.id === newRestaurant.id)) return prev
             const updated = [...prev, newRestaurant]
-            const sorted = sortRestaurants(updated, userIds)
-            setAgreed(checkAgreement(sorted, userIds))
-            return sorted
+            return sortRestaurants(updated, userIds)
           })
           break
         }
@@ -45,10 +47,25 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
               const filteredVotes = r.votes.filter((v) => v.id !== vote.id)
               return { ...r, votes: [...filteredVotes, vote] }
             })
-            const sorted = sortRestaurants(updated, userIds)
-            setAgreed(checkAgreement(sorted, userIds))
-            return sorted
+            return sortRestaurants(updated, userIds)
           })
+          break
+        }
+
+        case 'vote_removed': {
+          const { restaurantId, userId } = msg
+          setRestaurants((prev) => {
+            const updated = prev.map((r) => {
+              if (r.id !== restaurantId) return r
+              return { ...r, votes: r.votes.filter((v) => v.userId !== userId) }
+            })
+            return sortRestaurants(updated, userIds)
+          })
+          break
+        }
+
+        case 'pick_resolved': {
+          setPickResult({ winnerId: msg.winnerId, eliminations: msg.eliminations })
           break
         }
       }
@@ -69,9 +86,17 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
     socket.send({ type: 'add_restaurant', inputName, foundName, address, lat, lng, addedBy })
   }
 
-  function castVote(restaurantId: string, userId: string, score: number) {
-    socket.send({ type: 'cast_vote', restaurantId, userId, score })
+  function castVote(restaurantId: string, userId: string) {
+    socket.send({ type: 'cast_vote', restaurantId, userId })
   }
 
-  return { restaurants, newestId, agreed, loading, addRestaurant, castVote }
+  function resolvePick() {
+    socket.send({ type: 'resolve_pick' })
+  }
+
+  function clearPickResult() {
+    setPickResult(null)
+  }
+
+  return { restaurants, newestId, pickResult, loading, addRestaurant, castVote, resolvePick, clearPickResult }
 }

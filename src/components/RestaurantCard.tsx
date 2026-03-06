@@ -6,20 +6,16 @@ interface Props {
   users: SessionUser[]
   currentUserId: string
   rank: number
-  onVote: (restaurantId: string, userId: string, score: number) => void
+  onVote: (restaurantId: string, userId: string) => void
 }
 
 export default function RestaurantCard({ restaurant, users, currentUserId, rank, onVote }: Props) {
-  const myVote = restaurant.votes.find((v) => v.userId === currentUserId)
-
-  const bothVoted1 = users.length >= 2 && users.every((u) => {
-    const v = restaurant.votes.find((vt) => vt.userId === u.id)
-    return v?.score === 1
-  })
+  const hasVoted = restaurant.votes.some((v) => v.userId === currentUserId)
+  const voteCount = restaurant.votes.length
 
   return (
     <motion.div
-      className={`restaurant-card ${bothVoted1 ? 'agreed' : ''}`}
+      className="restaurant-card"
       layout
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -32,25 +28,24 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
         {restaurant.address && <p className="card-address">{restaurant.address}</p>}
 
         <div className="vote-row">
-          {[1, 2, 3].map((score) => (
-            <button
-              key={score}
-              className={`vote-btn ${myVote?.score === score ? 'active' : ''}`}
-              onClick={() => onVote(restaurant.id, currentUserId, score)}
-              title={score === 1 ? 'Top pick' : score === 2 ? 'Okay' : 'Last resort'}
-            >
-              {score === 1 ? '🥇' : score === 2 ? '🥈' : '🥉'}
-            </button>
-          ))}
+          <button
+            className={`thumbs-up-btn ${hasVoted ? 'active' : ''}`}
+            onClick={() => onVote(restaurant.id, currentUserId)}
+            title={hasVoted ? 'Remove vote' : 'Thumbs up'}
+          >
+            {hasVoted ? '\u{1F44D}' : '\u{1F44D}\u{1F3FB}'}
+            {voteCount > 0 && <span className="vote-count">{voteCount}</span>}
+          </button>
         </div>
 
         <div className="other-votes">
           {users.map((u) => {
-            const v = restaurant.votes.find((vt) => vt.userId === u.id)
+            const voted = restaurant.votes.some((v) => v.userId === u.id)
             if (u.id === currentUserId) return null
+            if (!voted) return null
             return (
               <span key={u.id} className="other-vote-chip">
-                {u.name}: {v ? `#${v.score}` : '—'}
+                {u.name}
               </span>
             )
           })}
@@ -72,8 +67,6 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
           ↗
         </a>
       )}
-
-      {bothVoted1 && <div className="agreed-badge">✓ Agreed!</div>}
     </motion.div>
   )
 }

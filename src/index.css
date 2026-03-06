@@ -175,6 +175,7 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
+  padding-top: calc(12px + env(safe-area-inset-top));
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -261,8 +262,8 @@ button { font-family: inherit; }
 
 .btn-close-map {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: calc(16px + env(safe-area-inset-top));
+  right: calc(16px + env(safe-area-inset-right));
   z-index: 910;
   background: var(--surface);
   color: var(--text);
@@ -373,10 +374,6 @@ button { font-family: inherit; }
   transition: border-color 0.2s;
 }
 
-.restaurant-card.agreed {
-  border-color: var(--green);
-  background: linear-gradient(135deg, var(--surface) 80%, rgba(34,197,94,0.08));
-}
 
 .card-rank {
   font-size: 1.2rem;
@@ -415,22 +412,31 @@ button { font-family: inherit; }
   margin-top: 10px;
 }
 
-.vote-btn {
+.thumbs-up-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 1.1rem;
+  padding: 6px 14px;
+  font-size: 1.2rem;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 
-.vote-btn:hover { background: var(--border); transform: scale(1.1); }
+.thumbs-up-btn:hover { background: var(--border); transform: scale(1.05); }
 
-.vote-btn.active {
+.thumbs-up-btn.active {
   border-color: var(--accent);
   background: rgba(249,115,22,0.15);
   transform: scale(1.05);
+}
+
+.vote-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .other-votes {
@@ -459,17 +465,142 @@ button { font-family: inherit; }
 
 .directions-link:hover { color: var(--accent); text-decoration: none; }
 
-.agreed-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: var(--green);
-  color: #fff;
-  font-size: 0.7rem;
+/* ─── Pick Button ────────────────────────────────── */
+.pick-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 16px;
+  font-size: 1.1rem;
   font-weight: 700;
-  border-radius: 20px;
-  padding: 3px 8px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
+
+.pick-button:hover { background: var(--accent-hover, #ea580c); transform: scale(1.02); }
+
+/* ─── Coin Flip ──────────────────────────────────── */
+.coin-flip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+}
+
+.coin-flip-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  max-width: 360px;
+  width: 90%;
+}
+
+.coin-flip-round {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.coin-flip-matchup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.matchup-name {
+  font-weight: 700;
+  font-size: 1rem;
+  transition: opacity 0.3s;
+}
+
+.matchup-name.eliminated {
+  opacity: 0.3;
+  text-decoration: line-through;
+}
+
+.matchup-vs {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.coin-container {
+  perspective: 600px;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+}
+
+.coin {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.coin-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 800;
+  backface-visibility: hidden;
+}
+
+.coin-heads {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+}
+
+.coin-tails {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  color: #f8fafc;
+  transform: rotateY(180deg);
+}
+
+.coin-flip-winner {
+  margin-top: 8px;
+}
+
+.winner-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.coin-flip-continue {
+  margin-top: 16px;
+}
+
+/* ─── Celebration Dismiss ────────────────────────── */
+.celebration-dismiss {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.8);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.celebration-dismiss:hover { background: rgba(255,255,255,0.1); }
 
 /* ─── Add Restaurant ──────────────────────────────── */
 .add-restaurant {
@@ -639,5 +770,9 @@ button { font-family: inherit; }
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
+  }
+
+  .leaflet-left {
+    left: 16px;
   }
 }

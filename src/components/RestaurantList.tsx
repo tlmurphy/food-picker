@@ -6,7 +6,7 @@ interface Props {
   restaurants: Restaurant[]
   users: SessionUser[]
   currentUserId: string
-  onVote: (restaurantId: string, userId: string, score: number) => void
+  onVote: (restaurantId: string, userId: string) => void
 }
 
 export default function RestaurantList({ restaurants, users, currentUserId, onVote }: Props) {

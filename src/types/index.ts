@@ -16,8 +16,14 @@ export interface Vote {
   id: string
   restaurantId: string
   userId: string
-  score: number
   votedAt: string
+}
+
+export interface Elimination {
+  round: number
+  restaurant1: string
+  restaurant2: string
+  winnerId: string
 }
 
 export interface Restaurant {
