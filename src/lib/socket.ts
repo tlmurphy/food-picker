@@ -9,6 +9,7 @@ const RECONNECT_MAX_MS = 16000
 class SocketClient {
   private ws: WebSocket | null = null
   private handlers = new Set<MessageHandler>()
+  private openHandlers = new Set<() => void>()
   private reconnectDelay = RECONNECT_BASE_MS
   private shouldReconnect = true
   private pendingQueue: ClientMessage[] = []
@@ -27,6 +28,9 @@ class SocketClient {
         this.ws!.send(JSON.stringify(msg))
       }
       this.pendingQueue = []
+      for (const handler of this.openHandlers) {
+        handler()
+      }
     }
 
     this.ws.onmessage = (event) => {
@@ -67,6 +71,11 @@ class SocketClient {
   subscribe(handler: MessageHandler): () => void {
     this.handlers.add(handler)
     return () => this.handlers.delete(handler)
+  }
+
+  subscribeToOpen(handler: () => void): () => void {
+    this.openHandlers.add(handler)
+    return () => this.openHandlers.delete(handler)
   }
 }
 

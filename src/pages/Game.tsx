@@ -38,6 +38,15 @@ export default function Game() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, user?.id])
 
+  // Re-register with server after any WebSocket reconnect (new ws object = unregistered)
+  useEffect(() => {
+    if (!user || !sessionId) return
+    return socket.subscribeToOpen(() => {
+      socket.send({ type: 'join_session', sessionId, userId: user.id, userName: user.name })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, user?.id])
+
   useEffect(() => {
     if (!user) {
       navigate(`/?join=${sessionId}`, { replace: true })
@@ -143,12 +152,12 @@ export default function Game() {
                   currentUserId={user.id}
                   onVote={castVote}
                 />
-                {!pickButtonDisabled && (
-                  <button className="btn pick-button" onClick={handlePickClick}>
-                    {pickButtonLabel}
-                  </button>
-                )}
               </div>
+              {!pickButtonDisabled && (
+                <button className="btn pick-button" onClick={handlePickClick}>
+                  {pickButtonLabel}
+                </button>
+              )}
             </>
           )}
         </section>

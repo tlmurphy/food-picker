@@ -29,21 +29,17 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html {
-  height: 100%;
-}
-
-body {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
+html, body {
+  height: 100vh;
+  height: 100dvh;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
   margin: 0;
 }
 
 #root {
   height: 100%;
+  overflow: hidden;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -179,6 +175,8 @@ button { font-family: inherit; }
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .game-title {
@@ -246,6 +244,7 @@ button { font-family: inherit; }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -479,7 +478,8 @@ button { font-family: inherit; }
 .pick-button {
   width: 100%;
   padding: 14px;
-  margin-top: 16px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  flex-shrink: 0;
   font-size: 1.1rem;
   font-weight: 700;
   background: var(--accent);
