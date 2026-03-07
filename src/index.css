@@ -279,7 +279,25 @@ button { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
+
+
+.list-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.list-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
 
 /* ─── View Map Button ────────────────────────────── */
 .btn-map {
@@ -670,6 +688,33 @@ button { font-family: inherit; }
   padding: 6px 10px;
   background: var(--surface2);
   border-radius: 8px;
+}
+
+/* ─── Location Banner ────────────────────────────── */
+.location-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.location-banner-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.location-banner-setter {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 /* ─── Location Setup ──────────────────────────────── */

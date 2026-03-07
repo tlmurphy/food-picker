@@ -64,7 +64,7 @@ interface MapViewProps {
 }
 
 export default function MapView({ session, restaurants, newestId, visible }: MapViewProps) {
-  const prevNewestId = useRef<string | null>(null)
+  const prevNewestId = useRef<string | null>(newestId)
 
   const center: [number, number] =
     session?.locationLat != null && session?.locationLng != null

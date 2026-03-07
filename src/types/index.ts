@@ -3,6 +3,7 @@ export interface Session {
   locationLat: number | null
   locationLng: number | null
   locationLabel: string | null
+  locationSetBy: string | null
 }
 
 export interface SessionUser {

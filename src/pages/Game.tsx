@@ -86,6 +86,9 @@ export default function Game() {
   if (!user) return null
 
   const hasLocation = session?.locationLat != null && session?.locationLng != null
+  const locationSetter = session?.locationSetBy
+    ? users.find((u) => u.id === session.locationSetBy) ?? null
+    : null
   const { top, maxVotes } = getTopTied(restaurants)
 
   const winnerRestaurant = pickResult
@@ -172,9 +175,15 @@ export default function Game() {
       <main className="game-body">
         <section className="list-panel">
           {!hasLocation ? (
-            <LocationSetup onSetLocation={updateLocation} />
+            <LocationSetup onSetLocation={(lat, lng, label) => updateLocation(lat, lng, label, user.id)} />
           ) : (
             <>
+              <div className="location-banner">
+                <span className="location-banner-label">📍 {session!.locationLabel}</span>
+                {locationSetter && (
+                  <span className="location-banner-setter">set by {locationSetter.name}</span>
+                )}
+              </div>
               <AddRestaurant
                 session={session!}
                 userId={user.id}

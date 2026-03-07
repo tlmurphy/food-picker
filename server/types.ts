@@ -5,6 +5,7 @@ export interface Session {
   locationLat: number | null
   locationLng: number | null
   locationLabel: string | null
+  locationSetBy: string | null
 }
 
 export interface SessionUser {
@@ -46,7 +47,7 @@ export interface Restaurant {
 export type ClientMessage =
   | { type: 'create_session' }
   | { type: 'join_session'; sessionId: string; userId: string; userName: string }
-  | { type: 'update_location'; lat: number; lng: number; label: string }
+  | { type: 'update_location'; lat: number; lng: number; label: string; userId: string }
   | { type: 'add_restaurant'; inputName: string; foundName: string; address: string; lat: number; lng: number; addedBy: string }
   | { type: 'cast_vote'; restaurantId: string; userId: string }
   | { type: 'resolve_pick' }
@@ -58,7 +59,7 @@ export type ServerMessage =
   | { type: 'session_state'; session: Session; users: SessionUser[]; restaurants: Restaurant[] }
   | { type: 'error'; message: string }
   | { type: 'user_joined'; user: SessionUser }
-  | { type: 'location_updated'; lat: number; lng: number; label: string }
+  | { type: 'location_updated'; lat: number; lng: number; label: string; locationSetBy: string | null }
   | { type: 'restaurant_added'; restaurant: Restaurant }
   | { type: 'vote_cast'; vote: Vote }
   | { type: 'vote_removed'; restaurantId: string; userId: string }

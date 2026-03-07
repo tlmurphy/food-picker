@@ -18,7 +18,7 @@ export function createSession(): string | null {
   if (store.size >= MAX_SESSIONS) return null
   const id = nanoid(10).toUpperCase()
   store.set(id, {
-    session: { id, locationLat: null, locationLng: null, locationLabel: null },
+    session: { id, locationLat: null, locationLng: null, locationLabel: null, locationSetBy: null },
     users: [],
     restaurants: [],
     connections: new Map(),
@@ -82,12 +82,13 @@ export function disconnectSocket(ws: WebSocket): void {
   }
 }
 
-export function updateLocation(sessionId: string, lat: number, lng: number, label: string): boolean {
+export function updateLocation(sessionId: string, lat: number, lng: number, label: string, locationSetBy: string | null): boolean {
   const state = store.get(sessionId)
   if (!state) return false
   state.session.locationLat = lat
   state.session.locationLng = lng
   state.session.locationLabel = label
+  state.session.locationSetBy = locationSetBy
   return true
 }
 

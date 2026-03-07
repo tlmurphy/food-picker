@@ -200,9 +200,10 @@ Bun.serve({
           if (!sessionId) break
           if (!validCoords(msg.lat, msg.lng)) break
           const label = sanitize(msg.label, 200)
-          updateLocation(sessionId, msg.lat, msg.lng, label)
+          const locationSetBy = sanitize(msg.userId, 50) || null
+          updateLocation(sessionId, msg.lat, msg.lng, label, locationSetBy)
           const state = getSession(sessionId)!
-          broadcast(state, { type: 'location_updated', lat: msg.lat, lng: msg.lng, label })
+          broadcast(state, { type: 'location_updated', lat: msg.lat, lng: msg.lng, label, locationSetBy })
           break
         }
 
