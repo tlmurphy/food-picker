@@ -22,8 +22,8 @@ export default function Join() {
     const params = new URLSearchParams(window.location.search)
     const joinId = params.get('join')
     if (joinId) {
-      setCode(joinId.toUpperCase())
-      setStep('join-code')
+      setPendingSessionId(joinId.toUpperCase())
+      setStep('name')
     }
   }, [])
 
@@ -150,7 +150,19 @@ export default function Join() {
           </div>
         )}
 
-        {error && <p className="error-text">{error}</p>}
+        {error && (
+          <>
+            <p className="error-text">{error}</p>
+            <div className="button-group">
+              <button className="btn btn-primary" onClick={() => { setError(''); handleCreate() }}>
+                Create New Session
+              </button>
+              <button className="btn btn-ghost" onClick={() => { setError(''); setStep('join-code') }}>
+                Enter Different Code
+              </button>
+            </div>
+          </>
+        )}
       </motion.div>
     </div>
   )

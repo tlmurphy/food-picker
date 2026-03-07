@@ -64,7 +64,7 @@ export default function Game() {
     }
   }, [pickResult])
 
-  if (sessionLoading || restLoading) {
+  if ((sessionLoading || restLoading) && !sessionError) {
     return (
       <div className="loading-screen">
         <div className="spinner" />
