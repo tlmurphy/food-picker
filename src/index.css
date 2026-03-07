@@ -201,6 +201,37 @@ button { font-family: inherit; }
   letter-spacing: 0.1em;
 }
 
+.share-btn {
+  font-family: monospace;
+  font-size: 0.85rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.share-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.share-btn:active {
+  opacity: 0.75;
+}
+
+.share-btn.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+  letter-spacing: normal;
+}
+
 .players {
   display: flex;
   gap: 6px;
