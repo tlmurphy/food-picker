@@ -1,11 +1,14 @@
 import { nanoid } from 'nanoid'
+import type { ServerWebSocket } from 'bun'
 import type { Session, SessionUser, Restaurant, Vote, Elimination, ServerMessage } from '../shared/types.ts'
+
+type Socket = ServerWebSocket<unknown>
 
 export interface SessionState {
   session: Session
   users: SessionUser[]
   restaurants: Restaurant[]
-  connections: Map<WebSocket, string> // ws → userId
+  connections: Map<Socket, string> // ws → userId
   cleanupTimer: ReturnType<typeof setTimeout> | null
 }
 
@@ -33,7 +36,7 @@ export function getSession(id: string): SessionState | undefined {
 
 export function joinSession(
   sessionId: string,
-  ws: WebSocket,
+  ws: Socket,
   userId: string,
   userName: string
 ): { state: SessionState; user: SessionUser; isNew: boolean } | null {
@@ -68,7 +71,7 @@ export function joinSession(
   return { state, user, isNew: true }
 }
 
-export function disconnectSocket(ws: WebSocket): void {
+export function disconnectSocket(ws: Socket): void {
   for (const [sessionId, state] of store.entries()) {
     if (!state.connections.has(ws)) continue
     state.connections.delete(ws)
@@ -201,7 +204,7 @@ export function resolvePick(
   return { winnerId: remaining[0].id, eliminations }
 }
 
-export function broadcast(state: SessionState, message: ServerMessage, exclude?: WebSocket): void {
+export function broadcast(state: SessionState, message: ServerMessage, exclude?: Socket): void {
   const payload = JSON.stringify(message)
   for (const [ws] of state.connections) {
     if (ws !== exclude && ws.readyState === WebSocket.OPEN) {
@@ -210,7 +213,7 @@ export function broadcast(state: SessionState, message: ServerMessage, exclude?:
   }
 }
 
-export function send(ws: WebSocket, message: ServerMessage): void {
+export function send(ws: Socket, message: ServerMessage): void {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(message))
   }

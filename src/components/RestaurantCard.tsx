@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { Restaurant, SessionUser } from '../types'
+import { getDirectionsUrl } from '../lib/directions'
 
 interface Props {
   restaurant: Restaurant
@@ -55,11 +56,7 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
       {restaurant.lat != null && restaurant.lng != null && (
         <a
           className="directions-link"
-          href={
-            /iPad|iPhone|iPod/.test(navigator.userAgent)
-              ? `maps://maps.apple.com/?daddr=${restaurant.lat},${restaurant.lng}`
-              : `https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`
-          }
+          href={getDirectionsUrl(restaurant.lat, restaurant.lng)}
           target="_blank"
           rel="noopener noreferrer"
           title="Get directions"

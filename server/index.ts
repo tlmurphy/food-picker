@@ -151,7 +151,7 @@ Bun.serve({
 
       // Reject oversized messages (64KB limit)
       if (typeof rawMessage === 'string' && rawMessage.length > 65536) {
-        send(ws as unknown as WebSocket, { type: 'error', message: 'Message too large.' })
+        send(ws,{ type: 'error', message: 'Message too large.' })
         return
       }
 
@@ -159,7 +159,7 @@ Bun.serve({
       try {
         msg = JSON.parse(rawMessage as string) as ClientMessage
       } catch {
-        send(ws as unknown as WebSocket, { type: 'error', message: 'Invalid message.' })
+        send(ws,{ type: 'error', message: 'Invalid message.' })
         return
       }
 
@@ -169,11 +169,11 @@ Bun.serve({
         case 'create_session': {
           const id = createSession()
           if (!id) {
-            send(ws as unknown as WebSocket, { type: 'error', message: 'Server at capacity. Try again later.' })
+            send(ws,{ type: 'error', message: 'Server at capacity. Try again later.' })
             break
           }
           wsToSession.set(ws, id)
-          send(ws as unknown as WebSocket, { type: 'session_created', sessionId: id })
+          send(ws,{ type: 'session_created', sessionId: id })
           break
         }
 
@@ -181,15 +181,15 @@ Bun.serve({
           const cleanSessionId = sanitize(msg.sessionId, 20).toUpperCase()
           const cleanUserId = sanitize(msg.userId, 50)
           const cleanUserName = sanitize(msg.userName, 50)
-          const result = joinSession(cleanSessionId, ws as unknown as WebSocket, cleanUserId, cleanUserName)
+          const result = joinSession(cleanSessionId, ws, cleanUserId, cleanUserName)
           if (!result) {
-            send(ws as unknown as WebSocket, { type: 'error', message: 'Session not found. Check the code and try again.' })
+            send(ws,{ type: 'error', message: 'Session not found. Check the code and try again.' })
             return
           }
           wsToSession.set(ws, cleanSessionId)
           const { state, user, isNew } = result
 
-          send(ws as unknown as WebSocket, {
+          send(ws,{
             type: 'session_state',
             session: state.session,
             users: state.users,
@@ -197,7 +197,7 @@ Bun.serve({
           })
 
           if (isNew) {
-            broadcast(state, { type: 'user_joined', user }, ws as unknown as WebSocket)
+            broadcast(state, { type: 'user_joined', user }, ws)
           }
           break
         }
@@ -259,7 +259,7 @@ Bun.serve({
       wsConnectionCount = Math.max(0, wsConnectionCount - 1)
       console.log('[ws] connection closed')
       wsToSession.delete(ws)
-      disconnectSocket(ws as unknown as WebSocket)
+      disconnectSocket(ws)
     },
   },
 })

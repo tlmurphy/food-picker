@@ -20,7 +20,7 @@ export function useRestaurants(sessionId: string | undefined, options?: UseResta
   const optionsRef = useRef(options)
   useEffect(() => {
     optionsRef.current = options
-  })
+  }, [options])
 
   useEffect(() => {
     if (!sessionId) return

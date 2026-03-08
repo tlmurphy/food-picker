@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-l
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Session, Restaurant } from '../types'
+import { getDirectionsUrl } from '../lib/directions'
 
 const restaurantIcon = L.divIcon({
   className: 'pin-drop',
@@ -132,7 +133,7 @@ export default function MapView({ session, restaurants, newestId, visible }: Map
                 {r.address && <><br />{r.address}</>}
                 <br />
                 <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}`}
+                  href={getDirectionsUrl(r.lat, r.lng)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

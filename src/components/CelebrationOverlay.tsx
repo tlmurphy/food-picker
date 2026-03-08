@@ -2,11 +2,14 @@ import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import { motion } from 'framer-motion'
 import type { Restaurant } from '../types'
+import { getDirectionsUrl } from '../lib/directions'
 
 interface Props {
   restaurant: Restaurant
   onDismiss: () => void
 }
+
+const CONFETTI_COLORS = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff']
 
 export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
   const fired = useRef(false)
@@ -23,14 +26,14 @@ export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff'],
+        colors: CONFETTI_COLORS,
       })
       void confetti({
         particleCount: 6,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff'],
+        colors: CONFETTI_COLORS,
       })
 
       if (Date.now() < end) requestAnimationFrame(frame)
@@ -41,9 +44,7 @@ export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
 
   const directionsUrl =
     restaurant.lat != null && restaurant.lng != null
-      ? /iPad|iPhone|iPod/.test(navigator.userAgent)
-        ? `maps://maps.apple.com/?daddr=${restaurant.lat},${restaurant.lng}`
-        : `https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`
+      ? getDirectionsUrl(restaurant.lat, restaurant.lng)
       : null
 
   return (
