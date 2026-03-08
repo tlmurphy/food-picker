@@ -25,7 +25,7 @@ Create `.env.local`:
 
 ```
 VITE_WS_URL=ws://localhost:5173/ws
-VITE_GOOGLE_MAPS_API_KEY=AIza...
+GOOGLE_MAPS_API_KEY=AIza...
 ```
 
 **Testing on other devices (e.g. phone on same network):**
