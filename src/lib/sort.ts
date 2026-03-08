@@ -1,9 +1,6 @@
 import type { Restaurant } from '../types'
 
-export function sortRestaurants(
-  restaurants: Restaurant[],
-  _userIds: string[]
-): Restaurant[] {
+export function sortRestaurants(restaurants: Restaurant[]): Restaurant[] {
   return [...restaurants].sort((a, b) => {
     // More votes = ranked higher (descending)
     const diff = b.votes.length - a.votes.length

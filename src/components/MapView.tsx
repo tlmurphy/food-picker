@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -64,23 +64,21 @@ interface MapViewProps {
 }
 
 export default function MapView({ session, restaurants, newestId, visible }: MapViewProps) {
-  const prevNewestId = useRef<string | null>(newestId)
+  const [prevNewestId, setPrevNewestId] = useState<string | null>(newestId)
+  const [newestRestaurant, setNewestRestaurant] = useState<Restaurant | null>(null)
+
+  // Detect a newly added restaurant by comparing newestId to its previous value.
+  // React's "update during render" pattern: call setState during render when a
+  // prop changes — React re-renders immediately with the updated state.
+  if (newestId !== prevNewestId) {
+    setPrevNewestId(newestId)
+    setNewestRestaurant(newestId ? (restaurants.find((r) => r.id === newestId) ?? null) : null)
+  }
 
   const center: [number, number] =
     session?.locationLat != null && session?.locationLng != null
       ? [session.locationLat, session.locationLng]
       : defaultCenter
-
-  const newestRestaurant =
-    newestId && newestId !== prevNewestId.current
-      ? (restaurants.find((r) => r.id === newestId) ?? null)
-      : null
-
-  useEffect(() => {
-    if (newestId) {
-      prevNewestId.current = newestId
-    }
-  }, [newestId])
 
   return (
     <div className="map-wrapper">

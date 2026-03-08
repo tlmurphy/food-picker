@@ -18,14 +18,14 @@ export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
     const end = Date.now() + 4000
 
     const frame = () => {
-      confetti({
+      void confetti({
         particleCount: 6,
         angle: 60,
         spread: 55,
         origin: { x: 0 },
         colors: ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff'],
       })
-      confetti({
+      void confetti({
         particleCount: 6,
         angle: 120,
         spread: 55,

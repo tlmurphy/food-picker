@@ -42,7 +42,7 @@ export function useSession(sessionId: string | undefined) {
     return unsubscribe
   }, [sessionId])
 
-  async function updateLocation(lat: number, lng: number, label: string, userId: string) {
+  function updateLocation(lat: number, lng: number, label: string, userId: string) {
     if (!sessionId) return
     // Optimistic update
     setSession((prev) => prev ? { ...prev, locationLat: lat, locationLng: lng, locationLabel: label, locationSetBy: userId } : prev)

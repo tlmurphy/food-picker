@@ -339,7 +339,7 @@ async function proxyGeocode(req: Request, url: URL): Promise<Response> {
   const latlng = url.searchParams.get('latlng') ?? ''
   const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(latlng)}&key=${GOOGLE_API_KEY}`
   const upstream = await fetch(geocodeUrl)
-  const data = await upstream.json()
+  const data: unknown = await upstream.json()
   return new Response(JSON.stringify(data), {
     status: upstream.status,
     headers: { 'Content-Type': 'application/json' },

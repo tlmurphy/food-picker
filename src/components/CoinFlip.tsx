@@ -29,7 +29,7 @@ export default function CoinFlip({ eliminations, restaurants, onComplete }: Prop
       setFlipping(true)
       setShowResult(false)
     }
-  }, [isLastRound, elimination?.winnerId, onComplete])
+  }, [isLastRound, elimination, onComplete])
 
   useEffect(() => {
     if (!flipping) return

@@ -22,6 +22,7 @@ export default function Join() {
     const params = new URLSearchParams(window.location.search)
     const joinId = params.get('join')
     if (joinId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingSessionId(joinId.toUpperCase())
       setStep('name')
     }
@@ -73,7 +74,7 @@ export default function Join() {
           ? (msg.users.find((u) => u.id === user.id) ?? msg.users[msg.users.length - 1])
           : msg.users[msg.users.length - 1]
         saveUser(ourUser)
-        navigate(`/${pendingSessionId}`)
+        void navigate(`/${pendingSessionId}`)
       } else if (msg.type === 'error') {
         unsubscribe()
         setLoading(false)

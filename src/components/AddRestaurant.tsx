@@ -97,7 +97,7 @@ export default function AddRestaurant({ session, userId, restaurants, onAdd }: P
         {suggestions.length > 0 && (
           <ul className="autocomplete-dropdown">
             {suggestions.map((s) => (
-              <li key={s.placeId} onMouseDown={() => handleSelect(s.placeId, s.text)}>
+              <li key={s.placeId} onMouseDown={() => { void handleSelect(s.placeId, s.text) }}>
                 {s.text}
               </li>
             ))}

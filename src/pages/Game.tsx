@@ -18,11 +18,7 @@ export default function Game() {
   const navigate = useNavigate()
   const { user } = useUser(sessionId)
   const { session, users, loading: sessionLoading, error: sessionError, updateLocation } = useSession(sessionId)
-  const userIds = users.map((u) => u.id)
-  const { restaurants, newestId, pickResult, loading: restLoading, addRestaurant, castVote, resolvePick, clearPickResult } = useRestaurants(
-    sessionId,
-    userIds
-  )
+  const { restaurants, newestId, pickResult, loading: restLoading, addRestaurant, castVote, resolvePick, clearPickResult } = useRestaurants(sessionId)
   const [mapOpen, setMapOpen] = useState(false)
   const [showCoinFlip, setShowCoinFlip] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -36,7 +32,7 @@ export default function Game() {
   useEffect(() => {
     if (!user || !sessionId) return
     socket.send({ type: 'join_session', sessionId, userId: user.id, userName: user.name })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, user?.id])
 
   // Re-register with server after any WebSocket reconnect (new ws object = unregistered)
@@ -45,12 +41,12 @@ export default function Game() {
     return socket.subscribeToOpen(() => {
       socket.send({ type: 'join_session', sessionId, userId: user.id, userName: user.name })
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, user?.id])
 
   useEffect(() => {
     if (!user) {
-      navigate(`/?join=${sessionId}`, { replace: true })
+      void navigate(`/?join=${sessionId}`, { replace: true })
     }
   }, [user, navigate, sessionId])
 
@@ -76,7 +72,7 @@ export default function Game() {
     return (
       <div className="error-screen">
         <p>{sessionError}</p>
-        <button className="btn btn-primary" onClick={() => navigate('/')}>
+        <button className="btn btn-primary" onClick={() => { void navigate('/') }}>
           Back to Home
         </button>
       </div>
@@ -85,7 +81,7 @@ export default function Game() {
 
   if (!user) return null
 
-  const hasLocation = session?.locationLat != null && session?.locationLng != null
+  const hasLocation = session !== null && session.locationLat != null && session.locationLng != null
   const locationSetter = session?.locationSetBy
     ? users.find((u) => u.id === session.locationSetBy) ?? null
     : null
@@ -153,12 +149,12 @@ export default function Game() {
       <header className="game-header">
         <h2 className="game-title">Food Picker</h2>
         <div className="session-info">
-          <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={handleShare}>
+          <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={() => { void handleShare() }}>
             {copied ? 'Copied!' : `#${sessionId}`}
             {!copied && (
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
               </svg>
             )}
           </button>
@@ -179,13 +175,13 @@ export default function Game() {
           ) : (
             <>
               <div className="location-banner">
-                <span className="location-banner-label">📍 {session!.locationLabel}</span>
+                <span className="location-banner-label">📍 {session.locationLabel}</span>
                 {locationSetter && (
                   <span className="location-banner-setter">set by {locationSetter.name}</span>
                 )}
               </div>
               <AddRestaurant
-                session={session!}
+                session={session}
                 userId={user.id}
                 restaurants={restaurants}
                 onAdd={addRestaurant}

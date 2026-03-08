@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { autocompleteLocation, getPlaceLocation, reverseGeocode } from '../lib/googlemaps'
 
 interface Props {
-  onSetLocation: (lat: number, lng: number, label: string) => Promise<void>
+  onSetLocation: (lat: number, lng: number, label: string) => void
 }
 
 export default function LocationSetup({ onSetLocation }: Props) {
@@ -41,7 +41,7 @@ export default function LocationSetup({ onSetLocation }: Props) {
     setError('')
     try {
       const location = await getPlaceLocation(placeId)
-      await onSetLocation(location.lat, location.lng, location.label)
+      onSetLocation(location.lat, location.lng, location.label)
     } catch {
       setError('Failed to load location details. Try again.')
     } finally {
@@ -54,15 +54,17 @@ export default function LocationSetup({ onSetLocation }: Props) {
     setTimeout(() => setSuggestions([]), 150)
   }
 
-  async function handleUseMyLocation() {
+  function handleUseMyLocation() {
     setLoading(true)
     setError('')
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const { latitude, longitude } = pos.coords
-        const label = (await reverseGeocode(latitude, longitude)) ?? 'My location'
-        await onSetLocation(latitude, longitude, label)
-        setLoading(false)
+        void (async () => {
+          const label = (await reverseGeocode(latitude, longitude)) ?? 'My location'
+          onSetLocation(latitude, longitude, label)
+          setLoading(false)
+        })()
       },
       () => {
         setError('Could not get your location. Try typing it instead.')
@@ -93,7 +95,7 @@ export default function LocationSetup({ onSetLocation }: Props) {
         {suggestions.length > 0 && (
           <ul className="autocomplete-dropdown">
             {suggestions.map((s) => (
-              <li key={s.placeId} onMouseDown={() => handleSelect(s.placeId)}>
+              <li key={s.placeId} onMouseDown={() => { void handleSelect(s.placeId) }}>
                 {s.text}
               </li>
             ))}

@@ -13,6 +13,22 @@ export interface GeocodedLocation {
 }
 
 type PlaceSuggestion = { placeId: string; text: string; distanceMeters?: number }
+
+type RawSuggestion = {
+  placePrediction: { placeId: string; text: { text: string }; distanceMeters?: number }
+}
+type AutocompleteResponse = { suggestions?: RawSuggestion[] }
+
+type PlaceApiData = {
+  location: { latitude: number; longitude: number }
+  displayName?: { text: string }
+  formattedAddress?: string
+}
+
+type GeocodeResponse = {
+  results: Array<{ formatted_address: string }>
+}
+
 type AutocompleteBody = {
   input: string
   includedPrimaryTypes?: string[]
@@ -27,9 +43,8 @@ async function fetchAutocomplete(body: AutocompleteBody): Promise<PlaceSuggestio
     body: JSON.stringify(body),
   })
   if (!response.ok) throw new Error(`Autocomplete error: ${response.status}`)
-  const data = await response.json()
-  type RawSuggestion = { placePrediction: { placeId: string; text: { text: string }; distanceMeters?: number } }
-  const suggestions: PlaceSuggestion[] = (data.suggestions ?? []).map((s: RawSuggestion) => ({
+  const data = (await response.json()) as AutocompleteResponse
+  const suggestions: PlaceSuggestion[] = (data.suggestions ?? []).map((s) => ({
     placeId: s.placePrediction.placeId,
     text: s.placePrediction.text.text,
     distanceMeters: s.placePrediction.distanceMeters,
@@ -60,10 +75,10 @@ export async function autocompleteRestaurant(
   })
 }
 
-async function fetchPlaceData(placeId: string) {
+async function fetchPlaceData(placeId: string): Promise<PlaceApiData> {
   const response = await fetch(`/api/places/${placeId}`, { headers: sessionHeader() })
   if (!response.ok) throw new Error(`Place details error: ${response.status}`)
-  return response.json()
+  return response.json() as Promise<PlaceApiData>
 }
 
 export async function getPlaceLocation(placeId: string): Promise<GeocodedLocation> {
@@ -78,8 +93,8 @@ export async function getPlaceLocation(placeId: string): Promise<GeocodedLocatio
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   const response = await fetch(`/api/geocode?latlng=${lat},${lng}`, { headers: sessionHeader() })
   if (!response.ok) return null
-  const data = await response.json()
-  return (data.results?.[0]?.formatted_address as string) ?? null
+  const data = (await response.json()) as GeocodeResponse
+  return data.results[0]?.formatted_address ?? null
 }
 
 export async function getRestaurantPlaceDetails(placeId: string): Promise<PlaceResult> {

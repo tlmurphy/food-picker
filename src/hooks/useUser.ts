@@ -13,6 +13,7 @@ export function useUser(sessionId: string | undefined) {
   useEffect(() => {
     if (!sessionId) return
     const stored = localStorage.getItem(STORAGE_KEY_PREFIX + sessionId)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(stored ? (JSON.parse(stored) as SessionUser) : null)
   }, [sessionId])
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { ClientMessage, ServerMessage } from './socketTypes'
 
 type MessageHandler = (msg: ServerMessage) => void

@@ -8,13 +8,11 @@ export interface PickResult {
   eliminations: Elimination[]
 }
 
-export function useRestaurants(sessionId: string | undefined, userIds: string[]) {
+export function useRestaurants(sessionId: string | undefined) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [newestId, setNewestId] = useState<string | null>(null)
   const [pickResult, setPickResult] = useState<PickResult | null>(null)
   const [loading, setLoading] = useState(true)
-
-  const userIdsKey = userIds.join(',')
 
   useEffect(() => {
     if (!sessionId) return
@@ -22,7 +20,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
     const unsubscribe = socket.subscribe((msg) => {
       switch (msg.type) {
         case 'session_state': {
-          const sorted = sortRestaurants(msg.restaurants, userIds)
+          const sorted = sortRestaurants(msg.restaurants)
           setRestaurants(sorted)
           setLoading(false)
           break
@@ -34,7 +32,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
           setRestaurants((prev) => {
             if (prev.some((r) => r.id === newRestaurant.id)) return prev
             const updated = [...prev, newRestaurant]
-            return sortRestaurants(updated, userIds)
+            return sortRestaurants(updated)
           })
           break
         }
@@ -47,7 +45,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
               const filteredVotes = r.votes.filter((v) => v.id !== vote.id)
               return { ...r, votes: [...filteredVotes, vote] }
             })
-            return sortRestaurants(updated, userIds)
+            return sortRestaurants(updated)
           })
           break
         }
@@ -59,7 +57,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
               if (r.id !== restaurantId) return r
               return { ...r, votes: r.votes.filter((v) => v.userId !== userId) }
             })
-            return sortRestaurants(updated, userIds)
+            return sortRestaurants(updated)
           })
           break
         }
@@ -72,8 +70,7 @@ export function useRestaurants(sessionId: string | undefined, userIds: string[])
     })
 
     return unsubscribe
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, userIdsKey])
+  }, [sessionId])
 
   function addRestaurant(
     inputName: string,
