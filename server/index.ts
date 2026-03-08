@@ -114,6 +114,12 @@ Bun.serve({
       return proxyGoogleMaps(req, url)
     }
 
+    // Google Geocoding proxy: /api/geocode?latlng=lat,lng
+    if (url.pathname === '/api/geocode') {
+      if (req.method === 'OPTIONS') return new Response(null, { status: 204 })
+      return proxyGeocode(req, url)
+    }
+
     // Static file serving (production React build)
     return serveStatic(url.pathname)
   },
@@ -309,6 +315,34 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
     headers: {
       'Content-Type': 'application/json',
     },
+  })
+}
+
+async function proxyGeocode(req: Request, url: URL): Promise<Response> {
+  const origin = req.headers.get('origin')
+  if (!IS_DEV && origin !== null && !ALLOWED_ORIGINS.has(origin)) {
+    return new Response('Forbidden', { status: 403 })
+  }
+
+  const sessionId = req.headers.get('x-session-id') ?? ''
+  if (!getSession(sessionId.toUpperCase())) {
+    return new Response('Forbidden', { status: 403 })
+  }
+
+  const forwarded = req.headers.get('x-forwarded-for') ?? ''
+  const ips = forwarded.split(',').map((s) => s.trim()).filter(Boolean)
+  const ip = ips[ips.length - 1] ?? '127.0.0.1'
+  if (!checkRateLimit(ip)) {
+    return new Response('Too Many Requests', { status: 429 })
+  }
+
+  const latlng = url.searchParams.get('latlng') ?? ''
+  const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(latlng)}&key=${GOOGLE_API_KEY}`
+  const upstream = await fetch(geocodeUrl)
+  const data = await upstream.json()
+  return new Response(JSON.stringify(data), {
+    status: upstream.status,
+    headers: { 'Content-Type': 'application/json' },
   })
 }
 

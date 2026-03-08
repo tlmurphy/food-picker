@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { autocompleteLocation, getPlaceLocation } from '../lib/googlemaps'
+import { autocompleteLocation, getPlaceLocation, reverseGeocode } from '../lib/googlemaps'
 
 interface Props {
   onSetLocation: (lat: number, lng: number, label: string) => Promise<void>
@@ -59,7 +59,9 @@ export default function LocationSetup({ onSetLocation }: Props) {
     setError('')
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        await onSetLocation(pos.coords.latitude, pos.coords.longitude, 'My location')
+        const { latitude, longitude } = pos.coords
+        const label = (await reverseGeocode(latitude, longitude)) ?? 'My location'
+        await onSetLocation(latitude, longitude, label)
         setLoading(false)
       },
       () => {

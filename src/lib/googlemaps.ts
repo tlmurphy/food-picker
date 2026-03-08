@@ -75,6 +75,13 @@ export async function getPlaceLocation(placeId: string): Promise<GeocodedLocatio
   }
 }
 
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  const response = await fetch(`/api/geocode?latlng=${lat},${lng}`, { headers: sessionHeader() })
+  if (!response.ok) return null
+  const data = await response.json()
+  return (data.results?.[0]?.formatted_address as string) ?? null
+}
+
 export async function getRestaurantPlaceDetails(placeId: string): Promise<PlaceResult> {
   const data = await fetchPlaceData(placeId)
   return {
