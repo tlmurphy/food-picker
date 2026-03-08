@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { socket } from '../lib/socket'
 import { sortRestaurants } from '../lib/sort'
 import type { Restaurant, Elimination } from '../types'
@@ -8,11 +8,19 @@ export interface PickResult {
   eliminations: Elimination[]
 }
 
-export function useRestaurants(sessionId: string | undefined) {
+interface UseRestaurantsOptions {
+  onPickResolved?: (result: PickResult) => void
+}
+
+export function useRestaurants(sessionId: string | undefined, options?: UseRestaurantsOptions) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [newestId, setNewestId] = useState<string | null>(null)
   const [pickResult, setPickResult] = useState<PickResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const optionsRef = useRef(options)
+  useEffect(() => {
+    optionsRef.current = options
+  })
 
   useEffect(() => {
     if (!sessionId) return
@@ -63,7 +71,9 @@ export function useRestaurants(sessionId: string | undefined) {
         }
 
         case 'pick_resolved': {
-          setPickResult({ winnerId: msg.winnerId, eliminations: msg.eliminations })
+          const result = { winnerId: msg.winnerId, eliminations: msg.eliminations }
+          setPickResult(result)
+          optionsRef.current?.onPickResolved?.(result)
           break
         }
       }

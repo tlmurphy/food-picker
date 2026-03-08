@@ -1,6 +1,6 @@
 import { join } from 'path'
 import type { ServerWebSocket } from 'bun'
-import type { ClientMessage } from './types'
+import type { ClientMessage } from '../shared/types.ts'
 import {
   createSession,
   getSession,

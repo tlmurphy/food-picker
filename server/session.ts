@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import type { Session, SessionUser, Restaurant, Vote, Elimination, ServerMessage } from './types'
+import type { Session, SessionUser, Restaurant, Vote, Elimination, ServerMessage } from '../shared/types.ts'
 
 export interface SessionState {
   session: Session

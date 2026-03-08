@@ -1,44 +1,4 @@
-export interface Session {
-  id: string
-  locationLat: number | null
-  locationLng: number | null
-  locationLabel: string | null
-  locationSetBy: string | null
-}
-
-export interface SessionUser {
-  id: string
-  sessionId: string
-  name: string
-  joinedAt: string
-}
-
-export interface Vote {
-  id: string
-  restaurantId: string
-  userId: string
-  votedAt: string
-}
-
-export interface Elimination {
-  round: number
-  restaurant1: string
-  restaurant2: string
-  winnerId: string
-}
-
-export interface Restaurant {
-  id: string
-  sessionId: string
-  inputName: string
-  foundName: string | null
-  address: string | null
-  lat: number | null
-  lng: number | null
-  addedBy: string | null
-  addedAt: string
-  votes: Vote[]
-}
+export type { Session, SessionUser, Vote, Elimination, Restaurant, ClientMessage, ServerMessage } from '../../shared/types.ts'
 
 export interface PlaceResult {
   lat: number

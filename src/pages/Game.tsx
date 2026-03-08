@@ -18,10 +18,18 @@ export default function Game() {
   const navigate = useNavigate()
   const { user } = useUser(sessionId)
   const { session, users, loading: sessionLoading, error: sessionError, updateLocation } = useSession(sessionId)
-  const { restaurants, newestId, pickResult, loading: restLoading, addRestaurant, castVote, resolvePick, clearPickResult } = useRestaurants(sessionId)
-  const [mapOpen, setMapOpen] = useState(false)
   const [showCoinFlip, setShowCoinFlip] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const { restaurants, newestId, pickResult, loading: restLoading, addRestaurant, castVote, resolvePick, clearPickResult } = useRestaurants(sessionId, {
+    onPickResolved: (result) => {
+      if (result.eliminations.length > 0) {
+        setShowCoinFlip(true)
+      } else {
+        setShowCelebration(true)
+      }
+    },
+  })
+  const [mapOpen, setMapOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -32,8 +40,7 @@ export default function Game() {
   useEffect(() => {
     if (!user || !sessionId) return
     socket.send({ type: 'join_session', sessionId, userId: user.id, userName: user.name })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, user?.id])
+  }, [sessionId, user])
 
   // Re-register with server after any WebSocket reconnect (new ws object = unregistered)
   useEffect(() => {
@@ -41,8 +48,7 @@ export default function Game() {
     return socket.subscribeToOpen(() => {
       socket.send({ type: 'join_session', sessionId, userId: user.id, userName: user.name })
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, user?.id])
+  }, [sessionId, user])
 
   useEffect(() => {
     if (!user) {
@@ -50,15 +56,6 @@ export default function Game() {
     }
   }, [user, navigate, sessionId])
 
-  // Handle pick result from server
-  useEffect(() => {
-    if (!pickResult) return
-    if (pickResult.eliminations.length > 0) {
-      setShowCoinFlip(true)
-    } else {
-      setShowCelebration(true)
-    }
-  }, [pickResult])
 
   if ((sessionLoading || restLoading) && !sessionError) {
     return (

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { ClientMessage, ServerMessage } from './socketTypes'
+import type { ClientMessage, ServerMessage } from '../types'
 
 type MessageHandler = (msg: ServerMessage) => void
 
