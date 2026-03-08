@@ -1,21 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { autocompleteRestaurant, getRestaurantPlaceDetails } from '../lib/googlemaps'
-import type { Session, Restaurant } from '../types'
+import type { Restaurant, Session } from '../types'
 
 interface Props {
   session: Session
   userId: string
   restaurants: Restaurant[]
-  onAdd: (
-    inputName: string,
-    foundName: string,
-    address: string,
-    lat: number,
-    lng: number,
-    addedBy: string
-  ) => void
+  onAdd: (inputName: string, foundName: string, address: string, lat: number, lng: number, addedBy: string) => void
 }
 
 export default function AddRestaurant({ session, userId, restaurants, onAdd }: Props) {
@@ -35,11 +28,8 @@ export default function AddRestaurant({ session, userId, restaurants, onAdd }: P
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const results = await autocompleteRestaurant(
-          value.trim(),
-          session.locationLat!,
-          session.locationLng!
-        )
+        // biome-ignore lint/style/noNonNullAssertion: null case is guarded before entering setTimeout
+        const results = await autocompleteRestaurant(value.trim(), session.locationLat!, session.locationLng!)
         setSuggestions(results)
       } catch {
         // Silently fail autocomplete
@@ -61,7 +51,7 @@ export default function AddRestaurant({ session, userId, restaurants, onAdd }: P
       const isDuplicate = restaurants.some(
         (r) =>
           r.foundName?.toLowerCase() === details.name.toLowerCase() &&
-          r.address?.toLowerCase() === details.address.toLowerCase()
+          r.address?.toLowerCase() === details.address.toLowerCase(),
       )
       if (isDuplicate) {
         toast.error(`${details.name} at ${details.address} has already been added.`)
@@ -97,7 +87,12 @@ export default function AddRestaurant({ session, userId, restaurants, onAdd }: P
         {suggestions.length > 0 && (
           <ul className="autocomplete-dropdown">
             {suggestions.map((s) => (
-              <li key={s.placeId} onMouseDown={() => { void handleSelect(s.placeId, s.text) }}>
+              <li
+                key={s.placeId}
+                onMouseDown={() => {
+                  void handleSelect(s.placeId, s.text)
+                }}
+              >
                 {s.text}
               </li>
             ))}

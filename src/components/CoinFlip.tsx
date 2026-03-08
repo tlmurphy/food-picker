@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { Restaurant, Elimination } from '../types'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
+import type { Elimination, Restaurant } from '../types'
 
 interface Props {
   eliminations: Elimination[]
@@ -31,6 +31,7 @@ export default function CoinFlip({ eliminations, restaurants, onComplete }: Prop
     }
   }, [isLastRound, elimination, onComplete])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: currentRound is intentionally included to reset the timer on round change
   useEffect(() => {
     if (!flipping) return
     const timer = setTimeout(() => {
@@ -54,15 +55,12 @@ export default function CoinFlip({ eliminations, restaurants, onComplete }: Prop
   const isHeads = elimination.winnerId === elimination.restaurant1
 
   return (
-    <motion.div
-      className="coin-flip-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
+    <motion.div className="coin-flip-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="coin-flip-card">
         {eliminations.length > 1 && (
-          <p className="coin-flip-round">Round {currentRound + 1} of {eliminations.length}</p>
+          <p className="coin-flip-round">
+            Round {currentRound + 1} of {eliminations.length}
+          </p>
         )}
 
         <div className="coin-flip-matchup">
@@ -77,14 +75,10 @@ export default function CoinFlip({ eliminations, restaurants, onComplete }: Prop
               key={currentRound}
               className={`coin ${flipping ? 'flipping' : ''}`}
               initial={{ rotateY: 0 }}
-              animate={flipping
-                ? { rotateY: [0, 360, 720, 1080, isHeads ? 1080 : 1260] }
-                : { rotateY: isHeads ? 0 : 180 }
+              animate={
+                flipping ? { rotateY: [0, 360, 720, 1080, isHeads ? 1080 : 1260] } : { rotateY: isHeads ? 0 : 180 }
               }
-              transition={flipping
-                ? { duration: 2, ease: 'easeOut' }
-                : { duration: 0.3 }
-              }
+              transition={flipping ? { duration: 2, ease: 'easeOut' } : { duration: 0.3 }}
             >
               <div className="coin-face coin-heads">H</div>
               <div className="coin-face coin-tails">T</div>
@@ -93,14 +87,14 @@ export default function CoinFlip({ eliminations, restaurants, onComplete }: Prop
         </div>
 
         {showResult && (
-          <motion.div
-            className="coin-flip-winner"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div className="coin-flip-winner" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <p className="winner-label">{winnerName} wins!</p>
             {isLastRound && (
-              <button className="btn btn-primary coin-flip-continue" onClick={() => onComplete(elimination.winnerId)}>
+              <button
+                type="button"
+                className="btn btn-primary coin-flip-continue"
+                onClick={() => onComplete(elimination.winnerId)}
+              >
                 Continue
               </button>
             )}

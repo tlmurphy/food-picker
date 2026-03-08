@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useUser } from '../hooks/useUser'
 import { socket } from '../lib/socket'
 
@@ -96,10 +96,10 @@ export default function Join() {
 
         {step === 'landing' && (
           <div className="button-group">
-            <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>
+            <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={loading}>
               {loading ? 'Creating…' : 'Create Session'}
             </button>
-            <button className="btn btn-secondary" onClick={() => setStep('join-code')}>
+            <button type="button" className="btn btn-secondary" onClick={() => setStep('join-code')}>
               Join Session
             </button>
           </div>
@@ -107,21 +107,23 @@ export default function Join() {
 
         {step === 'join-code' && (
           <div className="input-group">
-            <label>Enter session code</label>
+            <label htmlFor="join-code-input">Enter session code</label>
             <input
+              id="join-code-input"
               className="input"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="AB12CD34EF"
               maxLength={10}
               onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+              // biome-ignore lint/a11y/noAutofocus: intentional UX — user just tapped "Join Session"
               autoFocus
             />
             <div className="button-group">
-              <button className="btn btn-primary" onClick={handleJoin} disabled={!code.trim()}>
+              <button type="button" className="btn btn-primary" onClick={handleJoin} disabled={!code.trim()}>
                 Join
               </button>
-              <button className="btn btn-ghost" onClick={() => setStep('landing')}>
+              <button type="button" className="btn btn-ghost" onClick={() => setStep('landing')}>
                 Back
               </button>
             </div>
@@ -130,14 +132,16 @@ export default function Join() {
 
         {step === 'name' && (
           <div className="input-group">
-            <label>Your name</label>
+            <label htmlFor="name-input">Your name</label>
             <input
+              id="name-input"
               className="input"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Trevor"
               maxLength={30}
               onKeyDown={(e) => e.key === 'Enter' && handleName()}
+              // biome-ignore lint/a11y/noAutofocus: intentional UX — user just created/joined a session
               autoFocus
             />
             {pendingSessionId && (
@@ -145,7 +149,7 @@ export default function Join() {
                 Session code: <strong>{pendingSessionId}</strong>
               </p>
             )}
-            <button className="btn btn-primary" onClick={handleName} disabled={loading || !name.trim()}>
+            <button type="button" className="btn btn-primary" onClick={handleName} disabled={loading || !name.trim()}>
               {loading ? 'Joining…' : "Let's Go!"}
             </button>
           </div>
@@ -155,10 +159,24 @@ export default function Join() {
           <>
             <p className="error-text">{error}</p>
             <div className="button-group">
-              <button className="btn btn-primary" onClick={() => { setError(''); handleCreate() }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setError('')
+                  handleCreate()
+                }}
+              >
                 Create New Session
               </button>
-              <button className="btn btn-ghost" onClick={() => { setError(''); setStep('join-code') }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setError('')
+                  setStep('join-code')
+                }}
+              >
                 Enter Different Code
               </button>
             </div>

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { autocompleteLocation, getPlaceLocation, reverseGeocode } from '../lib/googlemaps'
 
 interface Props {
@@ -69,16 +69,12 @@ export default function LocationSetup({ onSetLocation }: Props) {
       () => {
         setError('Could not get your location. Try typing it instead.')
         setLoading(false)
-      }
+      },
     )
   }
 
   return (
-    <motion.div
-      className="location-setup"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
+    <motion.div className="location-setup" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <h3>Where are you?</h3>
       <p className="location-hint">Set a location so we can find nearby restaurants.</p>
 
@@ -95,7 +91,12 @@ export default function LocationSetup({ onSetLocation }: Props) {
         {suggestions.length > 0 && (
           <ul className="autocomplete-dropdown">
             {suggestions.map((s) => (
-              <li key={s.placeId} onMouseDown={() => { void handleSelect(s.placeId) }}>
+              <li
+                key={s.placeId}
+                onMouseDown={() => {
+                  void handleSelect(s.placeId)
+                }}
+              >
                 {s.text}
               </li>
             ))}
@@ -103,12 +104,7 @@ export default function LocationSetup({ onSetLocation }: Props) {
         )}
       </div>
 
-      <button
-        className="btn btn-ghost use-location-btn"
-        onClick={handleUseMyLocation}
-        disabled={loading}
-        type="button"
-      >
+      <button className="btn btn-ghost use-location-btn" onClick={handleUseMyLocation} disabled={loading} type="button">
         📍 Use my current location
       </button>
 

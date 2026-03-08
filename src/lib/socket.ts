@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { ClientMessage, ServerMessage } from '../types'
 
 type MessageHandler = (msg: ServerMessage) => void
@@ -23,10 +22,11 @@ class SocketClient {
     this.ws = new WebSocket(WS_URL)
 
     this.ws.onopen = () => {
+      // biome-ignore lint/suspicious/noConsole: intentional WebSocket connection logging
       console.log('[socket] connected')
       this.reconnectDelay = RECONNECT_BASE_MS
       for (const msg of this.pendingQueue) {
-        this.ws!.send(JSON.stringify(msg))
+        this.ws?.send(JSON.stringify(msg))
       }
       this.pendingQueue = []
       for (const handler of this.openHandlers) {
@@ -39,6 +39,7 @@ class SocketClient {
       try {
         msg = JSON.parse(event.data as string) as ServerMessage
       } catch {
+        // biome-ignore lint/suspicious/noConsole: intentional WebSocket error logging
         console.error('[socket] invalid JSON from server')
         return
       }
@@ -50,6 +51,7 @@ class SocketClient {
     this.ws.onclose = () => {
       this.ws = null
       if (this.shouldReconnect) {
+        // biome-ignore lint/suspicious/noConsole: intentional WebSocket reconnect logging
         console.log(`[socket] closed — reconnecting in ${this.reconnectDelay}ms`)
         setTimeout(() => this.connect(), this.reconnectDelay)
         this.reconnectDelay = Math.min(this.reconnectDelay * 2, RECONNECT_MAX_MS)

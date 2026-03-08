@@ -1,6 +1,6 @@
-import { nanoid } from 'nanoid'
 import type { ServerWebSocket } from 'bun'
-import type { Session, SessionUser, Restaurant, Vote, Elimination, ServerMessage } from '../shared/types.ts'
+import { nanoid } from 'nanoid'
+import type { Elimination, Restaurant, ServerMessage, Session, SessionUser, Vote } from '../shared/types.ts'
 
 type Socket = ServerWebSocket<unknown>
 
@@ -38,7 +38,7 @@ export function joinSession(
   sessionId: string,
   ws: Socket,
   userId: string,
-  userName: string
+  userName: string,
 ): { state: SessionState; user: SessionUser; isNew: boolean } | null {
   const state = store.get(sessionId)
   if (!state) return null
@@ -85,7 +85,13 @@ export function disconnectSocket(ws: Socket): void {
   }
 }
 
-export function updateLocation(sessionId: string, lat: number, lng: number, label: string, locationSetBy: string | null): boolean {
+export function updateLocation(
+  sessionId: string,
+  lat: number,
+  lng: number,
+  label: string,
+  locationSetBy: string | null,
+): boolean {
   const state = store.get(sessionId)
   if (!state) return false
   state.session.locationLat = lat
@@ -102,15 +108,13 @@ export function addRestaurant(
   address: string,
   lat: number,
   lng: number,
-  addedBy: string
+  addedBy: string,
 ): Restaurant | null {
   const state = store.get(sessionId)
   if (!state) return null
   if (state.restaurants.length >= 50) return null
   const isDuplicate = state.restaurants.some(
-    (r) =>
-      r.foundName?.toLowerCase() === foundName.toLowerCase() &&
-      r.address?.toLowerCase() === address.toLowerCase()
+    (r) => r.foundName?.toLowerCase() === foundName.toLowerCase() && r.address?.toLowerCase() === address.toLowerCase(),
   )
   if (isDuplicate) return null
   const restaurant: Restaurant = {
@@ -132,7 +136,7 @@ export function addRestaurant(
 export function toggleVote(
   sessionId: string,
   restaurantId: string,
-  userId: string
+  userId: string,
 ): { action: 'added'; vote: Vote } | { action: 'removed'; restaurantId: string; userId: string } | null {
   const state = store.get(sessionId)
   if (!state) return null
@@ -155,9 +159,7 @@ export function toggleVote(
   return { action: 'added', vote }
 }
 
-export function resolvePick(
-  sessionId: string
-): { winnerId: string; eliminations: Elimination[] } | null {
+export function resolvePick(sessionId: string): { winnerId: string; eliminations: Elimination[] } | null {
   const state = store.get(sessionId)
   if (!state) return null
 

@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useSession } from '../hooks/useSession'
-import { useRestaurants } from '../hooks/useRestaurants'
-import { useUser } from '../hooks/useUser'
-import { socket } from '../lib/socket'
-import { setApiSessionId } from '../lib/googlemaps'
-import { getTopTied } from '../lib/sort'
-import MapView from '../components/MapView'
-import RestaurantList from '../components/RestaurantList'
+import { useNavigate, useParams } from 'react-router-dom'
 import AddRestaurant from '../components/AddRestaurant'
-import LocationSetup from '../components/LocationSetup'
 import CelebrationOverlay from '../components/CelebrationOverlay'
 import CoinFlip from '../components/CoinFlip'
+import LocationSetup from '../components/LocationSetup'
+import MapView from '../components/MapView'
+import RestaurantList from '../components/RestaurantList'
+import { useRestaurants } from '../hooks/useRestaurants'
+import { useSession } from '../hooks/useSession'
+import { useUser } from '../hooks/useUser'
+import { setApiSessionId } from '../lib/googlemaps'
+import { socket } from '../lib/socket'
+import { getTopTied } from '../lib/sort'
 
 export default function Game() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -20,7 +20,16 @@ export default function Game() {
   const { session, users, loading: sessionLoading, error: sessionError, updateLocation } = useSession(sessionId)
   const [showCoinFlip, setShowCoinFlip] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
-  const { restaurants, newestId, pickResult, loading: restLoading, addRestaurant, castVote, resolvePick, clearPickResult } = useRestaurants(sessionId, {
+  const {
+    restaurants,
+    newestId,
+    pickResult,
+    loading: restLoading,
+    addRestaurant,
+    castVote,
+    resolvePick,
+    clearPickResult,
+  } = useRestaurants(sessionId, {
     onPickResolved: (result) => {
       if (result.eliminations.length > 0) {
         setShowCoinFlip(true)
@@ -56,7 +65,6 @@ export default function Game() {
     }
   }, [user, navigate, sessionId])
 
-
   if ((sessionLoading || restLoading) && !sessionError) {
     return (
       <div className="loading-screen">
@@ -69,7 +77,13 @@ export default function Game() {
     return (
       <div className="error-screen">
         <p>{sessionError}</p>
-        <button className="btn btn-primary" onClick={() => { void navigate('/') }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            void navigate('/')
+          }}
+        >
           Back to Home
         </button>
       </div>
@@ -79,14 +93,10 @@ export default function Game() {
   if (!user) return null
 
   const hasLocation = session !== null && session.locationLat != null && session.locationLng != null
-  const locationSetter = session?.locationSetBy
-    ? users.find((u) => u.id === session.locationSetBy) ?? null
-    : null
+  const locationSetter = session?.locationSetBy ? (users.find((u) => u.id === session.locationSetBy) ?? null) : null
   const { top, maxVotes } = getTopTied(restaurants)
 
-  const winnerRestaurant = pickResult
-    ? restaurants.find((r) => r.id === pickResult.winnerId)
-    : null
+  const winnerRestaurant = pickResult ? restaurants.find((r) => r.id === pickResult.winnerId) : null
 
   let pickButtonLabel = ''
   let pickButtonDisabled = true
@@ -146,12 +156,31 @@ export default function Game() {
       <header className="game-header">
         <h2 className="game-title">Food Picker</h2>
         <div className="session-info">
-          <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={() => { void handleShare() }}>
+          <button
+            type="button"
+            className={`share-btn ${copied ? 'copied' : ''}`}
+            onClick={() => {
+              void handleShare()
+            }}
+          >
             {copied ? 'Copied!' : `#${sessionId}`}
             {!copied && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              <svg
+                aria-hidden="true"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
               </svg>
             )}
           </button>
@@ -173,31 +202,19 @@ export default function Game() {
             <>
               <div className="location-banner">
                 <span className="location-banner-label">📍 {session.locationLabel}</span>
-                {locationSetter && (
-                  <span className="location-banner-setter">set by {locationSetter.name}</span>
-                )}
+                {locationSetter && <span className="location-banner-setter">set by {locationSetter.name}</span>}
               </div>
-              <AddRestaurant
-                session={session}
-                userId={user.id}
-                restaurants={restaurants}
-                onAdd={addRestaurant}
-              />
+              <AddRestaurant session={session} userId={user.id} restaurants={restaurants} onAdd={addRestaurant} />
               <div className="list-scroll">
                 {restaurants.length > 0 && (
-                  <button className="btn btn-map" onClick={() => setMapOpen(true)}>
+                  <button type="button" className="btn btn-map" onClick={() => setMapOpen(true)}>
                     View Map
                   </button>
                 )}
-                <RestaurantList
-                  restaurants={restaurants}
-                  users={users}
-                  currentUserId={user.id}
-                  onVote={castVote}
-                />
+                <RestaurantList restaurants={restaurants} users={users} currentUserId={user.id} onVote={castVote} />
               </div>
               {!pickButtonDisabled && (
-                <button className="btn pick-button" onClick={handlePickClick}>
+                <button type="button" className="btn pick-button" onClick={handlePickClick}>
                   {pickButtonLabel}
                 </button>
               )}
@@ -208,15 +225,10 @@ export default function Game() {
 
       {mapOpen && (
         <div className="map-overlay">
-          <button className="btn btn-close-map" onClick={() => setMapOpen(false)}>
+          <button type="button" className="btn btn-close-map" onClick={() => setMapOpen(false)}>
             Close
           </button>
-          <MapView
-            session={session}
-            restaurants={restaurants}
-            newestId={newestId}
-            visible={mapOpen}
-          />
+          <MapView session={session} restaurants={restaurants} newestId={newestId} visible={mapOpen} />
         </div>
       )}
 

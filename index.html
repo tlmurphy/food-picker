@@ -12,7 +12,7 @@
     <!-- TODO: Remove this script after 2026-06-01 — only needed to clean up stale PWA service workers -->
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (var registration of registrations) {
             registration.unregister();
           }

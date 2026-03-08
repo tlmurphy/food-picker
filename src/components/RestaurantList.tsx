@@ -1,6 +1,6 @@
 import { AnimatePresence } from 'framer-motion'
-import RestaurantCard from './RestaurantCard'
 import type { Restaurant, SessionUser } from '../types'
+import RestaurantCard from './RestaurantCard'
 
 interface Props {
   restaurants: Restaurant[]

@@ -1,17 +1,17 @@
-import { join } from 'path'
+import { join } from 'node:path'
 import type { ServerWebSocket } from 'bun'
 import type { ClientMessage } from '../shared/types.ts'
 import {
+  addRestaurant,
+  broadcast,
   createSession,
+  disconnectSocket,
   getSession,
   joinSession,
-  disconnectSocket,
-  updateLocation,
-  addRestaurant,
-  toggleVote,
   resolvePick,
-  broadcast,
   send,
+  toggleVote,
+  updateLocation,
 } from './session'
 
 const PORT = Number(process.env.PORT ?? 3001)
@@ -20,12 +20,10 @@ const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? ''
 const GOOGLE_PLACES_BASE = 'https://places.googleapis.com'
 
 // Allowed WebSocket origins: Railway domain + localhost for dev
-const RAILWAY_DOMAIN = process.env.RAILWAY_PUBLIC_DOMAIN
-  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-  : null
+const RAILWAY_DOMAIN = process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null
 const IS_DEV = !RAILWAY_DOMAIN
 const ALLOWED_ORIGINS = new Set(
-  [RAILWAY_DOMAIN, 'http://localhost:5173', 'http://localhost:3001'].filter(Boolean) as string[]
+  [RAILWAY_DOMAIN, 'http://localhost:5173', 'http://localhost:3001'].filter(Boolean) as string[],
 )
 
 // Per-IP rate limiter for Google Maps proxy (100 req/min per IP)
@@ -83,8 +81,14 @@ function sanitize(s: unknown, maxLen: number): string {
 
 function validCoords(lat: unknown, lng: unknown): boolean {
   return (
-    typeof lat === 'number' && isFinite(lat) && lat >= -90 && lat <= 90 &&
-    typeof lng === 'number' && isFinite(lng) && lng >= -180 && lng <= 180
+    typeof lat === 'number' &&
+    Number.isFinite(lat) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    typeof lng === 'number' &&
+    Number.isFinite(lng) &&
+    lng >= -180 &&
+    lng <= 180
   )
 }
 
@@ -151,7 +155,7 @@ Bun.serve({
 
       // Reject oversized messages (64KB limit)
       if (typeof rawMessage === 'string' && rawMessage.length > 65536) {
-        send(ws,{ type: 'error', message: 'Message too large.' })
+        send(ws, { type: 'error', message: 'Message too large.' })
         return
       }
 
@@ -159,7 +163,7 @@ Bun.serve({
       try {
         msg = JSON.parse(rawMessage as string) as ClientMessage
       } catch {
-        send(ws,{ type: 'error', message: 'Invalid message.' })
+        send(ws, { type: 'error', message: 'Invalid message.' })
         return
       }
 
@@ -169,11 +173,11 @@ Bun.serve({
         case 'create_session': {
           const id = createSession()
           if (!id) {
-            send(ws,{ type: 'error', message: 'Server at capacity. Try again later.' })
+            send(ws, { type: 'error', message: 'Server at capacity. Try again later.' })
             break
           }
           wsToSession.set(ws, id)
-          send(ws,{ type: 'session_created', sessionId: id })
+          send(ws, { type: 'session_created', sessionId: id })
           break
         }
 
@@ -183,13 +187,13 @@ Bun.serve({
           const cleanUserName = sanitize(msg.userName, 50)
           const result = joinSession(cleanSessionId, ws, cleanUserId, cleanUserName)
           if (!result) {
-            send(ws,{ type: 'error', message: 'Session not found. Check the code and try again.' })
+            send(ws, { type: 'error', message: 'Session not found. Check the code and try again.' })
             return
           }
           wsToSession.set(ws, cleanSessionId)
           const { state, user, isNew } = result
 
-          send(ws,{
+          send(ws, {
             type: 'session_state',
             session: state.session,
             users: state.users,
@@ -208,6 +212,7 @@ Bun.serve({
           const label = sanitize(msg.label, 200)
           const locationSetBy = sanitize(msg.userId, 50) || null
           updateLocation(sessionId, msg.lat, msg.lng, label, locationSetBy)
+          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
           const state = getSession(sessionId)!
           broadcast(state, { type: 'location_updated', lat: msg.lat, lng: msg.lng, label, locationSetBy })
           break
@@ -226,6 +231,7 @@ Bun.serve({
             sanitize(msg.addedBy, 50),
           )
           if (!restaurant) break
+          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
           const state = getSession(sessionId)!
           broadcast(state, { type: 'restaurant_added', restaurant })
           break
@@ -235,6 +241,7 @@ Bun.serve({
           if (!sessionId) break
           const result = toggleVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50))
           if (!result) break
+          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
           const state = getSession(sessionId)!
           if (result.action === 'added') {
             broadcast(state, { type: 'vote_cast', vote: result.vote })
@@ -248,8 +255,13 @@ Bun.serve({
           if (!sessionId) break
           const pickResult = resolvePick(sessionId)
           if (!pickResult) break
+          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
           const state = getSession(sessionId)!
-          broadcast(state, { type: 'pick_resolved', winnerId: pickResult.winnerId, eliminations: pickResult.eliminations })
+          broadcast(state, {
+            type: 'pick_resolved',
+            winnerId: pickResult.winnerId,
+            eliminations: pickResult.eliminations,
+          })
           break
         }
       }
@@ -281,7 +293,10 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
 
   // Per-IP rate limiting (use last IP in chain — Railway appends real client IP at end)
   const forwarded = req.headers.get('x-forwarded-for') ?? ''
-  const ips = forwarded.split(',').map((s) => s.trim()).filter(Boolean)
+  const ips = forwarded
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   const ip = ips[ips.length - 1] ?? '127.0.0.1'
   if (!checkRateLimit(ip)) {
     return new Response('Too Many Requests', { status: 429 })
@@ -292,7 +307,8 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
 
   let fieldMask: string
   if (url.pathname.includes(':autocomplete')) {
-    fieldMask = 'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.distanceMeters'
+    fieldMask =
+      'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.distanceMeters'
   } else if (url.pathname.includes(':searchText')) {
     fieldMask = 'places.displayName,places.formattedAddress,places.location'
   } else {
@@ -330,7 +346,10 @@ async function proxyGeocode(req: Request, url: URL): Promise<Response> {
   }
 
   const forwarded = req.headers.get('x-forwarded-for') ?? ''
-  const ips = forwarded.split(',').map((s) => s.trim()).filter(Boolean)
+  const ips = forwarded
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   const ip = ips[ips.length - 1] ?? '127.0.0.1'
   if (!checkRateLimit(ip)) {
     return new Response('Too Many Requests', { status: 429 })
@@ -349,9 +368,7 @@ async function proxyGeocode(req: Request, url: URL): Promise<Response> {
 async function serveStatic(pathname: string): Promise<Response> {
   const safePath = pathname === '/' ? '/index.html' : pathname
   const isHashed = safePath.startsWith('/assets/')
-  const cacheControl = isHashed
-    ? 'public, max-age=31536000, immutable'
-    : 'no-cache'
+  const cacheControl = isHashed ? 'public, max-age=31536000, immutable' : 'no-cache'
   try {
     const file = Bun.file(join(DIST_DIR, safePath))
     if (await file.exists()) {

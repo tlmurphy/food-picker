@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import type { Restaurant, SessionUser } from '../types'
 import { getDirectionsUrl } from '../lib/directions'
+import type { Restaurant, SessionUser } from '../types'
 
 interface Props {
   restaurant: Restaurant
@@ -30,6 +30,7 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
 
         <div className="vote-row">
           <button
+            type="button"
             className={`thumbs-up-btn ${hasVoted ? 'active' : ''}`}
             onClick={() => onVote(restaurant.id, currentUserId)}
             title={hasVoted ? 'Remove vote' : 'Thumbs up'}

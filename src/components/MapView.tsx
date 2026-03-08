@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import { useEffect, useState } from 'react'
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { Session, Restaurant } from '../types'
 import { getDirectionsUrl } from '../lib/directions'
+import type { Restaurant, Session } from '../types'
 
 const restaurantIcon = L.divIcon({
   className: 'pin-drop',
@@ -25,8 +25,7 @@ function FlyTo({ lat, lng, zoom = 14 }: FlyToProps) {
   const map = useMap()
   useEffect(() => {
     map.flyTo([lat, lng], zoom, { duration: 1.2 })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lat, lng])
+  }, [lat, lng, zoom, map])
   return null
 }
 
@@ -34,8 +33,7 @@ function SetCenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
   useEffect(() => {
     map.setView([lat, lng], 13)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lat, lng])
+  }, [lat, lng, map])
   return null
 }
 
@@ -83,12 +81,7 @@ export default function MapView({ session, restaurants, newestId, visible }: Map
 
   return (
     <div className="map-wrapper">
-      <MapContainer
-        center={center}
-        zoom={session?.locationLat != null ? 13 : 4}
-        className="leaflet-map"
-        zoomControl
-      >
+      <MapContainer center={center} zoom={session?.locationLat != null ? 13 : 4} className="leaflet-map" zoomControl>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -102,7 +95,12 @@ export default function MapView({ session, restaurants, newestId, visible }: Map
             <Marker position={[session.locationLat, session.locationLng]} icon={originIcon}>
               <Popup>
                 <strong>Starting Point</strong>
-                {session.locationLabel && <><br />{session.locationLabel}</>}
+                {session.locationLabel && (
+                  <>
+                    <br />
+                    {session.locationLabel}
+                  </>
+                )}
               </Popup>
             </Marker>
           </>
@@ -115,28 +113,20 @@ export default function MapView({ session, restaurants, newestId, visible }: Map
         {restaurants.map((r) => {
           if (r.lat == null || r.lng == null) return null
           return (
-            <Marker
-              key={r.id}
-              position={[r.lat, r.lng]}
-              icon={restaurantIcon}
-            >
-              <Tooltip
-                permanent
-                direction="top"
-                offset={[0, -36]}
-                className="restaurant-tooltip"
-              >
+            <Marker key={r.id} position={[r.lat, r.lng]} icon={restaurantIcon}>
+              <Tooltip permanent direction="top" offset={[0, -36]} className="restaurant-tooltip">
                 {r.foundName ?? r.inputName}
               </Tooltip>
               <Popup>
                 <strong>{r.foundName ?? r.inputName}</strong>
-                {r.address && <><br />{r.address}</>}
+                {r.address && (
+                  <>
+                    <br />
+                    {r.address}
+                  </>
+                )}
                 <br />
-                <a
-                  href={getDirectionsUrl(r.lat, r.lng)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href={getDirectionsUrl(r.lat, r.lng)} target="_blank" rel="noopener noreferrer">
                   Get Directions
                 </a>
               </Popup>

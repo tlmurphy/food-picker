@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import './index.css'
 import App from './App.tsx'
 
+// biome-ignore lint/style/noNonNullAssertion: root element is always present in index.html
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

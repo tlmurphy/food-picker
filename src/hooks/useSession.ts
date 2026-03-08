@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { socket } from '../lib/socket'
 import type { Session, SessionUser } from '../types'
 
@@ -33,7 +33,15 @@ export function useSession(sessionId: string | undefined) {
 
         case 'location_updated':
           setSession((prev) =>
-            prev ? { ...prev, locationLat: msg.lat, locationLng: msg.lng, locationLabel: msg.label, locationSetBy: msg.locationSetBy } : prev
+            prev
+              ? {
+                  ...prev,
+                  locationLat: msg.lat,
+                  locationLng: msg.lng,
+                  locationLabel: msg.label,
+                  locationSetBy: msg.locationSetBy,
+                }
+              : prev,
           )
           break
       }
@@ -45,7 +53,9 @@ export function useSession(sessionId: string | undefined) {
   function updateLocation(lat: number, lng: number, label: string, userId: string) {
     if (!sessionId) return
     // Optimistic update
-    setSession((prev) => prev ? { ...prev, locationLat: lat, locationLng: lng, locationLabel: label, locationSetBy: userId } : prev)
+    setSession((prev) =>
+      prev ? { ...prev, locationLat: lat, locationLng: lng, locationLabel: label, locationSetBy: userId } : prev,
+    )
     socket.send({ type: 'update_location', lat, lng, label, userId })
   }
 

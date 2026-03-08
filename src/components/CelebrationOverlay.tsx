@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import { motion } from 'framer-motion'
-import type { Restaurant } from '../types'
+import { useEffect, useRef } from 'react'
 import { getDirectionsUrl } from '../lib/directions'
+import type { Restaurant } from '../types'
 
 interface Props {
   restaurant: Restaurant
@@ -43,9 +43,7 @@ export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
   }, [])
 
   const directionsUrl =
-    restaurant.lat != null && restaurant.lng != null
-      ? getDirectionsUrl(restaurant.lat, restaurant.lng)
-      : null
+    restaurant.lat != null && restaurant.lng != null ? getDirectionsUrl(restaurant.lat, restaurant.lng) : null
 
   return (
     <motion.div
@@ -61,17 +59,12 @@ export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
         {restaurant.address && <p className="celebration-address">{restaurant.address}</p>}
 
         {directionsUrl && (
-          <a
-            className="btn btn-primary celebration-btn"
-            href={directionsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a className="btn btn-primary celebration-btn" href={directionsUrl} target="_blank" rel="noopener noreferrer">
             Get Directions
           </a>
         )}
 
-        <button className="btn celebration-dismiss" onClick={onDismiss}>
+        <button type="button" className="btn celebration-dismiss" onClick={onDismiss}>
           Back to list
         </button>
       </div>

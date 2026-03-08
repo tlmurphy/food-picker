@@ -1,5 +1,7 @@
 /* ─── Reset & Base ────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -17,8 +19,8 @@
   --green: #22c55e;
   --red: #ef4444;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-  font-family: 'Inter', system-ui, sans-serif;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  font-family: "Inter", system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: var(--text);
@@ -29,8 +31,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body {
+html,
+body {
   height: 100vh;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: dvh fallback for browsers without dvh support */
   height: 100dvh;
   overflow-x: hidden;
   overscroll-behavior-x: none;
@@ -42,10 +46,17 @@ html, body {
   overflow: hidden;
 }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
 
-button { font-family: inherit; }
+button {
+  font-family: inherit;
+}
 
 /* ─── Utility ─────────────────────────────────────── */
 .btn {
@@ -59,17 +70,42 @@ button { font-family: inherit; }
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    opacity 0.15s,
+    transform 0.1s;
   white-space: nowrap;
 }
-.btn:active { transform: scale(0.97); }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover:not(:disabled) { background: var(--border); }
-.btn-ghost { background: transparent; color: var(--text-muted); font-weight: 400; }
-.btn-ghost:hover:not(:disabled) { color: var(--text); }
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--border);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+}
 
 .input {
   width: 100%;
@@ -83,10 +119,18 @@ button { font-family: inherit; }
   outline: none;
   transition: border-color 0.15s;
 }
-.input:focus { border-color: var(--accent); }
-.input::placeholder { color: var(--text-muted); }
+.input:focus {
+  border-color: var(--accent);
+}
+.input::placeholder {
+  color: var(--text-muted);
+}
 
-.error-text { color: var(--red); font-size: 0.85rem; margin-top: 8px; }
+.error-text {
+  color: var(--red);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
 
 /* ─── Join Page ───────────────────────────────────── */
 .join-page {
@@ -160,6 +204,7 @@ button { font-family: inherit; }
 /* ─── Game Layout ─────────────────────────────────── */
 .game-layout {
   height: 100vh;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: dvh fallback for browsers without dvh support */
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -214,7 +259,9 @@ button { font-family: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .share-btn:hover {
@@ -283,7 +330,6 @@ button { font-family: inherit; }
   scrollbar-color: transparent transparent;
 }
 
-
 .list-scroll::-webkit-scrollbar {
   width: 4px;
 }
@@ -298,7 +344,6 @@ button { font-family: inherit; }
   transition: background 0.3s;
 }
 
-
 /* ─── View Map Button ────────────────────────────── */
 .btn-map {
   background: var(--surface2);
@@ -306,7 +351,9 @@ button { font-family: inherit; }
   border: 1px solid var(--border);
   width: 100%;
 }
-.btn-map:hover:not(:disabled) { background: var(--border); }
+.btn-map:hover:not(:disabled) {
+  background: var(--border);
+}
 
 /* ─── Map Overlay ────────────────────────────────── */
 .map-overlay {
@@ -330,9 +377,11 @@ button { font-family: inherit; }
   font-size: 1rem;
   font-weight: 600;
   border-radius: var(--radius);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
-.btn-close-map:hover { background: var(--surface2); }
+.btn-close-map:hover {
+  background: var(--surface2);
+}
 
 /* ─── Map ─────────────────────────────────────────── */
 .map-wrapper {
@@ -347,14 +396,19 @@ button { font-family: inherit; }
 }
 
 /* ─── Origin Marker ──────────────────────────────── */
-.origin-marker { background: transparent; border: none; }
+.origin-marker {
+  background: transparent;
+  border: none;
+}
 .origin-marker-inner {
   width: 18px;
   height: 18px;
   background: #3b82f6;
   border: 3px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.3), 0 2px 6px rgba(0,0,0,0.3);
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* ─── Restaurant Tooltip ─────────────────────────── */
@@ -366,9 +420,9 @@ button { font-family: inherit; }
   padding: 3px 8px;
   font-size: 0.78rem;
   font-weight: 600;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 .restaurant-tooltip::before {
   border-top-color: var(--border);
@@ -376,10 +430,21 @@ button { font-family: inherit; }
 
 /* Pin drop animation */
 @keyframes pin-drop {
-  0%   { transform: translateY(-40px) scale(1.1); opacity: 0; }
-  60%  { transform: translateY(4px) scale(0.95); opacity: 1; }
-  80%  { transform: translateY(-6px) scale(1.02); }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+  0% {
+    transform: translateY(-40px) scale(1.1);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(4px) scale(0.95);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-6px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 .pin-drop-inner {
@@ -393,13 +458,13 @@ button { font-family: inherit; }
   border: 3px solid #fff;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .pin-shadow {
   width: 8px;
   height: 4px;
-  background: rgba(0,0,0,0.25);
+  background: rgba(0, 0, 0, 0.25);
   border-radius: 50%;
   margin: 2px auto 0;
   filter: blur(1px);
@@ -431,7 +496,6 @@ button { font-family: inherit; }
   position: relative;
   transition: border-color 0.2s;
 }
-
 
 .card-rank {
   font-size: 1.2rem;
@@ -480,14 +544,20 @@ button { font-family: inherit; }
   padding: 6px 14px;
   font-size: 1.2rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
 }
 
-.thumbs-up-btn:hover { background: var(--border); transform: scale(1.05); }
+.thumbs-up-btn:hover {
+  background: var(--border);
+  transform: scale(1.05);
+}
 
 .thumbs-up-btn.active {
   border-color: var(--accent);
-  background: rgba(249,115,22,0.15);
+  background: rgba(249, 115, 22, 0.15);
   transform: scale(1.05);
 }
 
@@ -521,7 +591,10 @@ button { font-family: inherit; }
   align-self: center;
 }
 
-.directions-link:hover { color: var(--accent); text-decoration: none; }
+.directions-link:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
 
 /* ─── Pick Button ────────────────────────────────── */
 .pick-button {
@@ -536,10 +609,15 @@ button { font-family: inherit; }
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
-.pick-button:hover { background: var(--accent-hover, #ea580c); transform: scale(1.02); }
+.pick-button:hover {
+  background: var(--accent-hover, #ea580c);
+  transform: scale(1.02);
+}
 
 /* ─── Coin Flip ──────────────────────────────────── */
 .coin-flip-overlay {
@@ -549,7 +627,7 @@ button { font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
 }
 
@@ -650,8 +728,8 @@ button { font-family: inherit; }
 .celebration-dismiss {
   margin-top: 12px;
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.3);
-  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
   padding: 8px 20px;
   border-radius: 8px;
   cursor: pointer;
@@ -659,7 +737,9 @@ button { font-family: inherit; }
   transition: background 0.15s;
 }
 
-.celebration-dismiss:hover { background: rgba(255,255,255,0.1); }
+.celebration-dismiss:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
 
 /* ─── Add Restaurant ──────────────────────────────── */
 .add-restaurant {
@@ -742,7 +822,9 @@ button { font-family: inherit; }
   padding: 6px 12px;
 }
 
-.autocomplete-wrapper { position: relative; }
+.autocomplete-wrapper {
+  position: relative;
+}
 
 .autocomplete-dropdown {
   position: absolute;
@@ -774,7 +856,7 @@ button { font-family: inherit; }
 .celebration-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -847,7 +929,9 @@ button { font-family: inherit; }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ─── Responsive ──────────────────────────────────── */

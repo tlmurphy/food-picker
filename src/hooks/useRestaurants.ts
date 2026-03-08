@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { socket } from '../lib/socket'
 import { sortRestaurants } from '../lib/sort'
-import type { Restaurant, Elimination } from '../types'
+import type { Elimination, Restaurant } from '../types'
 
 export interface PickResult {
   winnerId: string
@@ -88,7 +88,7 @@ export function useRestaurants(sessionId: string | undefined, options?: UseResta
     address: string,
     lat: number,
     lng: number,
-    addedBy: string
+    addedBy: string,
   ) {
     socket.send({ type: 'add_restaurant', inputName, foundName, address, lat, lng, addedBy })
   }

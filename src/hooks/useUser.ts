@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { SessionUser } from '../types'
 
 const STORAGE_KEY_PREFIX = 'food-picker-user-'

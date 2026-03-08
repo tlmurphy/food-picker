@@ -1,7 +1,9 @@
 import type { PlaceResult } from '../types'
 
 let _sessionId = ''
-export function setApiSessionId(id: string) { _sessionId = id }
+export function setApiSessionId(id: string) {
+  _sessionId = id
+}
 function sessionHeader(): Record<string, string> {
   return _sessionId ? { 'X-Session-Id': _sessionId } : {}
 }
@@ -63,7 +65,7 @@ export async function autocompleteRestaurant(
   input: string,
   lat: number,
   lng: number,
-  radiusMeters = 10000
+  radiusMeters = 10000,
 ): Promise<PlaceSuggestion[]> {
   return fetchAutocomplete({
     input,
