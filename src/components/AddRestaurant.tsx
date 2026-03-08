@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import { autocompleteRestaurant, getRestaurantPlaceDetails } from '../lib/googlemaps'
-import type { Session } from '../types'
+import type { Session, Restaurant } from '../types'
 
 interface Props {
   session: Session
   userId: string
+  restaurants: Restaurant[]
   onAdd: (
     inputName: string,
     foundName: string,
@@ -16,7 +18,7 @@ interface Props {
   ) => void
 }
 
-export default function AddRestaurant({ session, userId, onAdd }: Props) {
+export default function AddRestaurant({ session, userId, restaurants, onAdd }: Props) {
   const [value, setValue] = useState('')
   const [suggestions, setSuggestions] = useState<{ placeId: string; text: string }[]>([])
   const [loading, setLoading] = useState(false)
@@ -56,6 +58,15 @@ export default function AddRestaurant({ session, userId, onAdd }: Props) {
     setError('')
     try {
       const details = await getRestaurantPlaceDetails(placeId)
+      const isDuplicate = restaurants.some(
+        (r) =>
+          r.foundName?.toLowerCase() === details.name.toLowerCase() &&
+          r.address?.toLowerCase() === details.address.toLowerCase()
+      )
+      if (isDuplicate) {
+        toast.error(`${details.name} at ${details.address} has already been added.`)
+        return
+      }
       onAdd(suggestionText, details.name, details.address, details.lat, details.lng, userId)
     } catch {
       setError('Something went wrong. Check your connection and try again.')

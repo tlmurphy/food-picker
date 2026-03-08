@@ -187,6 +187,7 @@ export default function Game() {
               <AddRestaurant
                 session={session!}
                 userId={user.id}
+                restaurants={restaurants}
                 onAdd={addRestaurant}
               />
               <div className="list-scroll">

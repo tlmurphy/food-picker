@@ -104,6 +104,12 @@ export function addRestaurant(
   const state = store.get(sessionId)
   if (!state) return null
   if (state.restaurants.length >= 50) return null
+  const isDuplicate = state.restaurants.some(
+    (r) =>
+      r.foundName?.toLowerCase() === foundName.toLowerCase() &&
+      r.address?.toLowerCase() === address.toLowerCase()
+  )
+  if (isDuplicate) return null
   const restaurant: Restaurant = {
     id: nanoid(),
     sessionId,
