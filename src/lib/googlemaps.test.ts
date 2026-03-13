@@ -120,10 +120,7 @@ describe('getPlaceLocation', () => {
 
 describe('reverseGeocode', () => {
   it('returns the formatted address from the first result', async () => {
-    vi.stubGlobal(
-      'fetch',
-      mockFetch({ results: [{ formatted_address: '1 Infinite Loop, Cupertino, CA' }] }),
-    )
+    vi.stubGlobal('fetch', mockFetch({ results: [{ formatted_address: '1 Infinite Loop, Cupertino, CA' }] }))
     const address = await reverseGeocode(37.3318, -122.0312)
     expect(address).toBe('1 Infinite Loop, Cupertino, CA')
   })
@@ -147,7 +144,7 @@ describe('getRestaurantPlaceDetails', () => {
       'fetch',
       mockFetch({
         location: { latitude: 40.7, longitude: -74.0 },
-        displayName: { text: 'Joe\'s Pizza' },
+        displayName: { text: "Joe's Pizza" },
         formattedAddress: '7 Carmine St, New York, NY',
       }),
     )
@@ -155,7 +152,7 @@ describe('getRestaurantPlaceDetails', () => {
     expect(result).toEqual({
       lat: 40.7,
       lng: -74.0,
-      name: 'Joe\'s Pizza',
+      name: "Joe's Pizza",
       address: '7 Carmine St, New York, NY',
     })
   })
@@ -180,10 +177,7 @@ describe('session header', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await autocompleteLocation('test')
-    const headers = (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers as Record<
-      string,
-      string
-    >
+    const headers = (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers as Record<string, string>
     expect(headers['X-Session-Id']).toBe('mysession')
   })
 
@@ -193,10 +187,7 @@ describe('session header', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await autocompleteLocation('test')
-    const headers = (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers as Record<
-      string,
-      string
-    >
+    const headers = (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers as Record<string, string>
     expect(headers['X-Session-Id']).toBeUndefined()
   })
 })

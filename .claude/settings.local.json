@@ -3,11 +3,11 @@
     "allow": [
       "Bash(source ~/.nvm/nvm.sh)",
       "Bash(nvm use lts/krypton)",
-      "Bash(bun install)",
       "Bash(git status -u)",
-      "Bash(bun run:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(~/.bun/bin/bun install:*)",
+      "Bash(~/.bun/bin/bun run:*)"
     ]
   }
 }

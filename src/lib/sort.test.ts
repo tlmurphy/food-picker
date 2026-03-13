@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Restaurant } from '../types'
 import { getTopTied, sortRestaurants } from './sort'
 
-function makeRestaurant(
-  id: string,
-  voteUserIds: string[],
-  addedAt = '2024-01-01T00:00:00.000Z',
-): Restaurant {
+function makeRestaurant(id: string, voteUserIds: string[], addedAt = '2024-01-01T00:00:00.000Z'): Restaurant {
   return {
     id,
     sessionId: 'sess',
