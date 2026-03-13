@@ -45,6 +45,16 @@ bun run dev
 
 This starts both the Vite dev server (port 5173) and the Bun WebSocket server (port 3001) concurrently. Open **`http://localhost:5173`** in your browser — not 3001, which is the backend only.
 
+## Testing
+
+```bash
+bun run test        # run in watch mode
+bun run test:run    # single run (CI-friendly)
+bun run test:ui     # open vitest UI in browser
+```
+
+Tests use [vitest](https://vitest.dev) with a `happy-dom` environment. No additional setup required — test files live alongside their source files as `*.test.ts` / `*.test.tsx`.
+
 ## Deployment (Railway)
 
 1. Push the repo to GitHub
