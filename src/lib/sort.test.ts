@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Restaurant } from '../types'
-import { getTopTied, sortRestaurants } from './sort'
+import { getRestaurantName, getTopTied, sortRestaurants } from './sort'
 
 function makeRestaurant(id: string, voteUserIds: string[], addedAt = '2024-01-01T00:00:00.000Z'): Restaurant {
   return {
@@ -21,6 +21,21 @@ function makeRestaurant(id: string, voteUserIds: string[], addedAt = '2024-01-01
     })),
   }
 }
+
+describe('getRestaurantName', () => {
+  it('returns foundName when present', () => {
+    const r = makeRestaurant('a', [])
+    r.foundName = 'Actual Name'
+    expect(getRestaurantName(r)).toBe('Actual Name')
+  })
+
+  it('falls back to inputName when foundName is null', () => {
+    const r = makeRestaurant('a', [])
+    r.foundName = null
+    r.inputName = 'Typed Name'
+    expect(getRestaurantName(r)).toBe('Typed Name')
+  })
+})
 
 describe('sortRestaurants', () => {
   it('returns empty array for empty input', () => {
