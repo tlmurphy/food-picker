@@ -2,6 +2,8 @@
 
 A collaborative restaurant-picking app for groups on separate devices. Add restaurants, vote on them, and let the app decide — with a coin flip if there's a tie.
 
+See an example of this project deployed on https://food-picker.up.railway.app/
+
 ## Tech Stack
 
 - **Frontend**: React + Vite + TypeScript + React Router
