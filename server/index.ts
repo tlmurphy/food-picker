@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import type { ServerWebSocket } from 'bun'
-import { disconnectSocket, getSession } from './session'
 import { checkRateLimit, RATE_LIMIT_WINDOW_MS, rateLimitMap } from './rate-limit'
+import { disconnectSocket, getSession } from './session'
 import { handleWsMessage } from './ws-handler'
 
 const PORT = Number(process.env.PORT ?? 3001)

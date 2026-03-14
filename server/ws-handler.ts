@@ -1,5 +1,6 @@
 import type { ServerWebSocket } from 'bun'
 import type { ClientMessage } from '../shared/types.ts'
+import { RATE_LIMIT_WINDOW_MS } from './rate-limit'
 import {
   addRestaurant,
   broadcast,
@@ -12,7 +13,6 @@ import {
   updateLocation,
 } from './session'
 import { sanitize, validCoords } from './validation'
-import { RATE_LIMIT_WINDOW_MS } from './rate-limit'
 
 type Ws = ServerWebSocket<unknown>
 

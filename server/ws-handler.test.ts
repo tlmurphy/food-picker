@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ServerWebSocket } from 'bun'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the entire session module so no real state is touched
 vi.mock('./session')
@@ -25,7 +25,12 @@ function makeContext() {
   }
 }
 
-function dispatch(ws: Ws, msg: object, wsToSession: Map<Ws, string>, wsRateLimit: WeakMap<Ws, { count: number; resetAt: number }>) {
+function dispatch(
+  ws: Ws,
+  msg: object,
+  wsToSession: Map<Ws, string>,
+  wsRateLimit: WeakMap<Ws, { count: number; resetAt: number }>,
+) {
   handleWsMessage(ws, JSON.stringify(msg), wsToSession, wsRateLimit)
 }
 
@@ -129,7 +134,12 @@ describe('join_session', () => {
     const user = { id: 'u1', sessionId: 'SESS1', name: 'Alice', joinedAt: '2024-01-01T00:00:00Z' }
     vi.mocked(session.joinSession).mockReturnValue({ state, user, isNew: false })
 
-    dispatch(ws, { type: 'join_session', sessionId: 'SESS1', userId: 'u1', userName: 'Alice' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'join_session', sessionId: 'SESS1', userId: 'u1', userName: 'Alice' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.send).toHaveBeenCalledWith(ws, {
       type: 'session_state',
@@ -145,7 +155,12 @@ describe('join_session', () => {
     const user = { id: 'u1', sessionId: 'SESS1', name: 'Alice', joinedAt: '2024-01-01T00:00:00Z' }
     vi.mocked(session.joinSession).mockReturnValue({ state, user, isNew: false })
 
-    dispatch(ws, { type: 'join_session', sessionId: 'sess1', userId: 'u1', userName: 'Alice' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'join_session', sessionId: 'sess1', userId: 'u1', userName: 'Alice' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(wsToSession.get(ws)).toBe('SESS1')
   })
@@ -156,7 +171,12 @@ describe('join_session', () => {
     const user = { id: 'u1', sessionId: 'SESS1', name: 'Alice', joinedAt: '2024-01-01T00:00:00Z' }
     vi.mocked(session.joinSession).mockReturnValue({ state, user, isNew: true })
 
-    dispatch(ws, { type: 'join_session', sessionId: 'SESS1', userId: 'u1', userName: 'Alice' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'join_session', sessionId: 'SESS1', userId: 'u1', userName: 'Alice' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.broadcast).toHaveBeenCalledWith(state, { type: 'user_joined', user }, ws)
   })
@@ -167,7 +187,12 @@ describe('join_session', () => {
     const user = { id: 'u1', sessionId: 'SESS1', name: 'Alice', joinedAt: '2024-01-01T00:00:00Z' }
     vi.mocked(session.joinSession).mockReturnValue({ state, user, isNew: false })
 
-    dispatch(ws, { type: 'join_session', sessionId: 'SESS1', userId: 'u1', userName: 'Alice' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'join_session', sessionId: 'SESS1', userId: 'u1', userName: 'Alice' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.broadcast).not.toHaveBeenCalled()
   })
@@ -196,7 +221,12 @@ describe('update_location', () => {
     const state = mockSessionState()
     vi.mocked(session.getSession).mockReturnValue(state)
 
-    dispatch(ws, { type: 'update_location', lat: 37.7, lng: -122.4, label: 'SF', userId: 'u1' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'update_location', lat: 37.7, lng: -122.4, label: 'SF', userId: 'u1' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.updateLocation).toHaveBeenCalledWith('SESS1', 37.7, -122.4, 'SF', 'u1')
     expect(session.broadcast).toHaveBeenCalledWith(state, {
@@ -211,7 +241,12 @@ describe('update_location', () => {
   it('ignores the message when the ws has no associated session', () => {
     const { ws, wsToSession, wsRateLimit } = makeContext()
 
-    dispatch(ws, { type: 'update_location', lat: 37.7, lng: -122.4, label: 'SF', userId: 'u1' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'update_location', lat: 37.7, lng: -122.4, label: 'SF', userId: 'u1' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.updateLocation).not.toHaveBeenCalled()
   })
@@ -220,7 +255,12 @@ describe('update_location', () => {
     const { ws, wsToSession, wsRateLimit } = makeContext()
     wsToSession.set(ws, 'SESS1')
 
-    dispatch(ws, { type: 'update_location', lat: 999, lng: -122.4, label: 'SF', userId: 'u1' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      { type: 'update_location', lat: 999, lng: -122.4, label: 'SF', userId: 'u1' },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.updateLocation).not.toHaveBeenCalled()
   })
@@ -235,15 +275,35 @@ describe('add_restaurant', () => {
     const { ws, wsToSession, wsRateLimit } = makeContext()
     wsToSession.set(ws, 'SESS1')
     const restaurant = {
-      id: 'r1', sessionId: 'SESS1', inputName: 'Pizza', foundName: 'Pizza Place',
-      address: '1 Main St', lat: 37.7, lng: -122.4, addedBy: 'u1',
-      addedAt: '2024-01-01T00:00:00Z', votes: [],
+      id: 'r1',
+      sessionId: 'SESS1',
+      inputName: 'Pizza',
+      foundName: 'Pizza Place',
+      address: '1 Main St',
+      lat: 37.7,
+      lng: -122.4,
+      addedBy: 'u1',
+      addedAt: '2024-01-01T00:00:00Z',
+      votes: [],
     }
     const state = mockSessionState()
     vi.mocked(session.addRestaurant).mockReturnValue(restaurant)
     vi.mocked(session.getSession).mockReturnValue(state)
 
-    dispatch(ws, { type: 'add_restaurant', inputName: 'Pizza', foundName: 'Pizza Place', address: '1 Main St', lat: 37.7, lng: -122.4, addedBy: 'u1' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      {
+        type: 'add_restaurant',
+        inputName: 'Pizza',
+        foundName: 'Pizza Place',
+        address: '1 Main St',
+        lat: 37.7,
+        lng: -122.4,
+        addedBy: 'u1',
+      },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.broadcast).toHaveBeenCalledWith(state, { type: 'restaurant_added', restaurant })
   })
@@ -251,7 +311,20 @@ describe('add_restaurant', () => {
   it('ignores the message when not in a session', () => {
     const { ws, wsToSession, wsRateLimit } = makeContext()
 
-    dispatch(ws, { type: 'add_restaurant', inputName: 'Pizza', foundName: 'Pizza Place', address: '1 Main St', lat: 37.7, lng: -122.4, addedBy: 'u1' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      {
+        type: 'add_restaurant',
+        inputName: 'Pizza',
+        foundName: 'Pizza Place',
+        address: '1 Main St',
+        lat: 37.7,
+        lng: -122.4,
+        addedBy: 'u1',
+      },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.addRestaurant).not.toHaveBeenCalled()
   })
@@ -261,7 +334,20 @@ describe('add_restaurant', () => {
     wsToSession.set(ws, 'SESS1')
     vi.mocked(session.addRestaurant).mockReturnValue(null)
 
-    dispatch(ws, { type: 'add_restaurant', inputName: 'Pizza', foundName: 'Pizza Place', address: '1 Main St', lat: 37.7, lng: -122.4, addedBy: 'u1' }, wsToSession, wsRateLimit)
+    dispatch(
+      ws,
+      {
+        type: 'add_restaurant',
+        inputName: 'Pizza',
+        foundName: 'Pizza Place',
+        address: '1 Main St',
+        lat: 37.7,
+        lng: -122.4,
+        addedBy: 'u1',
+      },
+      wsToSession,
+      wsRateLimit,
+    )
 
     expect(session.broadcast).not.toHaveBeenCalled()
   })
