@@ -1,19 +1,8 @@
 import { join } from 'node:path'
 import type { ServerWebSocket } from 'bun'
-import type { ClientMessage } from '../shared/types.ts'
-import {
-  addRestaurant,
-  broadcast,
-  createSession,
-  disconnectSocket,
-  getSession,
-  joinSession,
-  resolvePick,
-  send,
-  toggleVote,
-  updateLocation,
-} from './session'
-import { sanitize, validCoords } from './validation'
+import { checkRateLimit, RATE_LIMIT_WINDOW_MS, rateLimitMap } from './rate-limit'
+import { disconnectSocket, getSession } from './session'
+import { handleWsMessage } from './ws-handler'
 
 const PORT = Number(process.env.PORT ?? 3001)
 const DIST_DIR = join(import.meta.dir, '../dist')
@@ -26,34 +15,6 @@ const IS_DEV = !RAILWAY_DOMAIN
 const ALLOWED_ORIGINS = new Set(
   [RAILWAY_DOMAIN, 'http://localhost:5173', 'http://localhost:3001'].filter(Boolean) as string[],
 )
-
-// Per-IP rate limiter for Google Maps proxy (100 req/min per IP)
-const RATE_LIMIT_MAX = 100
-const RATE_LIMIT_WINDOW_MS = 60_000
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-// Global rate limit: 200 req/min total (backstop against IP spoofing)
-const GLOBAL_RATE_LIMIT_MAX = 200
-let globalRateLimit = { count: 0, resetAt: Date.now() + RATE_LIMIT_WINDOW_MS }
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  // Reset global window if expired
-  if (now > globalRateLimit.resetAt) {
-    globalRateLimit = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
-  }
-  if (globalRateLimit.count >= GLOBAL_RATE_LIMIT_MAX) return false
-  // Per-IP check (use last IP in chain — Railway appends real client IP at end)
-  const entry = rateLimitMap.get(ip)
-  if (entry && now <= entry.resetAt && entry.count >= RATE_LIMIT_MAX) return false
-  // Both limits pass — increment
-  globalRateLimit.count++
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-  } else {
-    entry.count++
-  }
-  return true
-}
 
 // Periodically evict expired per-IP rate limit entries to prevent unbounded growth
 setInterval(() => {
@@ -71,7 +32,6 @@ const MAX_WS_CONNECTIONS = 50
 let wsConnectionCount = 0
 
 // Per-connection WS message rate limiter (60 messages/minute)
-const WS_RATE_LIMIT_MAX = 60
 const wsRateLimit = new WeakMap<ServerWebSocket<unknown>, { count: number; resetAt: number }>()
 
 Bun.serve({
@@ -121,132 +81,7 @@ Bun.serve({
     },
 
     message(ws, rawMessage) {
-      // Per-connection rate limit
-      const now = Date.now()
-      const wsLimit = wsRateLimit.get(ws) ?? { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
-      if (now > wsLimit.resetAt) {
-        wsLimit.count = 0
-        wsLimit.resetAt = now + RATE_LIMIT_WINDOW_MS
-      }
-      wsLimit.count++
-      wsRateLimit.set(ws, wsLimit)
-      if (wsLimit.count > WS_RATE_LIMIT_MAX) {
-        ws.close(1008, 'Rate limit exceeded')
-        return
-      }
-
-      // Reject oversized messages (64KB limit)
-      if (typeof rawMessage === 'string' && rawMessage.length > 65536) {
-        send(ws, { type: 'error', message: 'Message too large.' })
-        return
-      }
-
-      let msg: ClientMessage
-      try {
-        msg = JSON.parse(rawMessage as string) as ClientMessage
-      } catch {
-        send(ws, { type: 'error', message: 'Invalid message.' })
-        return
-      }
-
-      const sessionId = wsToSession.get(ws)
-
-      switch (msg.type) {
-        case 'create_session': {
-          const id = createSession()
-          if (!id) {
-            send(ws, { type: 'error', message: 'Server at capacity. Try again later.' })
-            break
-          }
-          wsToSession.set(ws, id)
-          send(ws, { type: 'session_created', sessionId: id })
-          break
-        }
-
-        case 'join_session': {
-          const cleanSessionId = sanitize(msg.sessionId, 20).toUpperCase()
-          const cleanUserId = sanitize(msg.userId, 50)
-          const cleanUserName = sanitize(msg.userName, 50)
-          const result = joinSession(cleanSessionId, ws, cleanUserId, cleanUserName)
-          if (!result) {
-            send(ws, { type: 'error', message: 'Session not found. Check the code and try again.' })
-            return
-          }
-          wsToSession.set(ws, cleanSessionId)
-          const { state, user, isNew } = result
-
-          send(ws, {
-            type: 'session_state',
-            session: state.session,
-            users: state.users,
-            restaurants: state.restaurants,
-          })
-
-          if (isNew) {
-            broadcast(state, { type: 'user_joined', user }, ws)
-          }
-          break
-        }
-
-        case 'update_location': {
-          if (!sessionId) break
-          if (!validCoords(msg.lat, msg.lng)) break
-          const label = sanitize(msg.label, 200)
-          const locationSetBy = sanitize(msg.userId, 50) || null
-          updateLocation(sessionId, msg.lat, msg.lng, label, locationSetBy)
-          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
-          const state = getSession(sessionId)!
-          broadcast(state, { type: 'location_updated', lat: msg.lat, lng: msg.lng, label, locationSetBy })
-          break
-        }
-
-        case 'add_restaurant': {
-          if (!sessionId) break
-          if (!validCoords(msg.lat, msg.lng)) break
-          const restaurant = addRestaurant(
-            sessionId,
-            sanitize(msg.inputName, 200),
-            sanitize(msg.foundName, 200),
-            sanitize(msg.address, 300),
-            msg.lat,
-            msg.lng,
-            sanitize(msg.addedBy, 50),
-          )
-          if (!restaurant) break
-          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
-          const state = getSession(sessionId)!
-          broadcast(state, { type: 'restaurant_added', restaurant })
-          break
-        }
-
-        case 'cast_vote': {
-          if (!sessionId) break
-          const result = toggleVote(sessionId, sanitize(msg.restaurantId, 50), sanitize(msg.userId, 50))
-          if (!result) break
-          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
-          const state = getSession(sessionId)!
-          if (result.action === 'added') {
-            broadcast(state, { type: 'vote_cast', vote: result.vote })
-          } else {
-            broadcast(state, { type: 'vote_removed', restaurantId: result.restaurantId, userId: result.userId })
-          }
-          break
-        }
-
-        case 'resolve_pick': {
-          if (!sessionId) break
-          const pickResult = resolvePick(sessionId)
-          if (!pickResult) break
-          // biome-ignore lint/style/noNonNullAssertion: session existence guaranteed by prior guard
-          const state = getSession(sessionId)!
-          broadcast(state, {
-            type: 'pick_resolved',
-            winnerId: pickResult.winnerId,
-            eliminations: pickResult.eliminations,
-          })
-          break
-        }
-      }
+      handleWsMessage(ws, rawMessage, wsToSession, wsRateLimit)
     },
 
     close(ws) {
