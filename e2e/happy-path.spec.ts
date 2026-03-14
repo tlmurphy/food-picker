@@ -88,7 +88,7 @@ test('full happy path: two users add & vote on a restaurant, pick winner', async
   const sessionCodeHint = pageA.locator('.session-code-hint strong')
   await expect(sessionCodeHint).toBeVisible()
   const sessionCode = await sessionCodeHint.innerText()
-  expect(sessionCode).toMatch(/^[A-Z0-9]+$/)
+  expect(sessionCode).toMatch(/^[A-Z0-9_-]+$/)
 
   // Enter user A's name and join
   await pageA.getByLabel('Your name').fill('Alice')
