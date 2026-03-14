@@ -4,11 +4,13 @@ A collaborative restaurant-picking app for groups on separate devices. Add resta
 
 ## Tech Stack
 
-- **Frontend**: React + Vite + TypeScript
+- **Frontend**: React + Vite + TypeScript + React Router
 - **Backend**: Bun WebSocket server (in-memory, no database)
 - **Map**: Leaflet.js + OpenStreetMap (free, no API key required)
 - **Restaurant & location search**: Google Places API (New) — autocomplete + place details
 - **Animations**: Framer Motion + canvas-confetti
+- **Notifications**: Sonner (toasts)
+- **Linting/formatting**: Biome
 - **Deployment**: Railway
 
 ## Setup
@@ -53,7 +55,29 @@ bun run test:run    # single run (CI-friendly)
 bun run test:ui     # open vitest UI in browser
 ```
 
+### Linting
+
+```bash
+bun run lint        # check for issues
+bun run lint:fix    # auto-fix issues
+```
+
 Tests use [vitest](https://vitest.dev) with a `happy-dom` environment. No additional setup required — test files live alongside their source files as `*.test.ts` / `*.test.tsx`.
+
+### E2E Tests
+
+```bash
+bun run test:e2e       # run headless
+bun run test:e2e:ui    # open Playwright UI
+```
+
+E2E tests use [Playwright](https://playwright.dev) and require Chromium. Install it once before running:
+
+```bash
+bunx playwright install chromium
+```
+
+All Google Maps API calls are intercepted with mocks — no API key needed to run the tests. The dev server starts automatically when the tests run.
 
 ## Deployment (Railway)
 
