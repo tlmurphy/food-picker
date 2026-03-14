@@ -184,3 +184,41 @@ test('full happy path: two users add & vote on a restaurant, pick winner', async
   await ctxA.close()
   await ctxB.close()
 })
+
+test('duplicate restaurant: adding same place twice shows a toast, list stays at one entry', async ({ page }) => {
+  await mockGoogleMapsRoutes(page)
+
+  // Create session and set location
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create Session' }).click()
+  await expect(page.getByLabel('Your name')).toBeVisible()
+  await page.getByLabel('Your name').fill('Alice')
+  await page.getByRole('button', { name: "Let's Go!" }).click()
+
+  await expect(page.getByPlaceholder('City, neighborhood, or address')).toBeVisible()
+  await page.getByPlaceholder('City, neighborhood, or address').fill('San Francisco')
+  await expect(page.locator('.autocomplete-dropdown li').first()).toBeVisible()
+  await page.locator('.autocomplete-dropdown li').first().click()
+  await expect(page.locator('.location-banner')).toBeVisible()
+
+  // Add the restaurant once
+  const restaurantInput = page.getByPlaceholder("Add a restaurant (e.g. McDonald's)")
+  await restaurantInput.fill('Burger')
+  await expect(page.locator('.autocomplete-dropdown li').first()).toBeVisible()
+  await page.locator('.autocomplete-dropdown li').first().click()
+  await expect(page.locator('.restaurant-card')).toHaveCount(1)
+
+  // Try to add the exact same restaurant again — use different search text so the
+  // debounced value actually changes (filling "Burger" again would be a no-op since
+  // debouncedValue never transitions through "" before we re-fill)
+  await restaurantInput.fill('Test Burger')
+  await expect(page.locator('.autocomplete-dropdown li').first()).toBeVisible()
+  await page.locator('.autocomplete-dropdown li').first().click()
+
+  // Sonner toast with duplicate message should appear
+  await expect(page.locator('[data-sonner-toast]')).toBeVisible()
+  await expect(page.locator('[data-sonner-toast]')).toContainText('already been added')
+
+  // List must still have exactly one entry
+  await expect(page.locator('.restaurant-card')).toHaveCount(1)
+})

@@ -21,7 +21,9 @@ describe('useDebounce', () => {
       initialProps: { value: 'hello' },
     })
     rerender({ value: 'world' })
-    act(() => { vi.advanceTimersByTime(299) })
+    act(() => {
+      vi.advanceTimersByTime(299)
+    })
     expect(result.current).toBe('hello')
   })
 
@@ -30,7 +32,9 @@ describe('useDebounce', () => {
       initialProps: { value: 'hello' },
     })
     rerender({ value: 'world' })
-    act(() => { vi.advanceTimersByTime(300) })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
     expect(result.current).toBe('world')
   })
 
@@ -39,11 +43,17 @@ describe('useDebounce', () => {
       initialProps: { value: 'a' },
     })
     rerender({ value: 'b' })
-    act(() => { vi.advanceTimersByTime(200) })
+    act(() => {
+      vi.advanceTimersByTime(200)
+    })
     rerender({ value: 'c' })
-    act(() => { vi.advanceTimersByTime(299) })
+    act(() => {
+      vi.advanceTimersByTime(299)
+    })
     expect(result.current).toBe('a') // Timer reset — not updated yet
-    act(() => { vi.advanceTimersByTime(1) })
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
     expect(result.current).toBe('c') // Now settled on latest value
   })
 })

@@ -13,6 +13,7 @@ import {
   toggleVote,
   updateLocation,
 } from './session'
+import { sanitize, validCoords } from './validation'
 
 const PORT = Number(process.env.PORT ?? 3001)
 const DIST_DIR = join(import.meta.dir, '../dist')
@@ -72,25 +73,6 @@ let wsConnectionCount = 0
 // Per-connection WS message rate limiter (60 messages/minute)
 const WS_RATE_LIMIT_MAX = 60
 const wsRateLimit = new WeakMap<ServerWebSocket<unknown>, { count: number; resetAt: number }>()
-
-// Input sanitization helpers
-function sanitize(s: unknown, maxLen: number): string {
-  if (typeof s !== 'string') return ''
-  return s.slice(0, maxLen)
-}
-
-function validCoords(lat: unknown, lng: unknown): boolean {
-  return (
-    typeof lat === 'number' &&
-    Number.isFinite(lat) &&
-    lat >= -90 &&
-    lat <= 90 &&
-    typeof lng === 'number' &&
-    Number.isFinite(lng) &&
-    lng >= -180 &&
-    lng <= 180
-  )
-}
 
 Bun.serve({
   port: PORT,
