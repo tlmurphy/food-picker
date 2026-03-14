@@ -12,6 +12,10 @@ export function sortRestaurants(restaurants: Restaurant[]): Restaurant[] {
   })
 }
 
+export function getRestaurantName(restaurant: Pick<Restaurant, 'foundName' | 'inputName'>): string {
+  return restaurant.foundName ?? restaurant.inputName
+}
+
 export function getTopTied(restaurants: Restaurant[]): { top: Restaurant[]; maxVotes: number } {
   const withVotes = restaurants.filter((r) => r.votes.length > 0)
   if (withVotes.length === 0) return { top: [], maxVotes: 0 }

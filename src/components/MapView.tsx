@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getDirectionsUrl } from '../lib/directions'
+import { getRestaurantName } from '../lib/sort'
 import type { Restaurant, Session } from '../types'
 
 const restaurantIcon = L.divIcon({
@@ -115,7 +116,7 @@ export default function MapView({ session, restaurants, newestId, visible }: Map
           return (
             <Marker key={r.id} position={[r.lat, r.lng]} icon={restaurantIcon}>
               <Tooltip permanent direction="top" offset={[0, -36]} className="restaurant-tooltip">
-                {r.foundName ?? r.inputName}
+                {getRestaurantName(r)}
               </Tooltip>
               <Popup>
                 <strong>{r.foundName ?? r.inputName}</strong>

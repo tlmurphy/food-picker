@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDebounce } from '../hooks/useDebounce'
 import { autocompleteLocation, getPlaceLocation, reverseGeocode } from '../lib/googlemaps'
 
 interface Props {
@@ -11,29 +12,22 @@ export default function LocationSetup({ onSetLocation }: Props) {
   const [suggestions, setSuggestions] = useState<{ placeId: string; text: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedQuery = useDebounce(query, 300)
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-
-    if (!query.trim()) {
+    if (!debouncedQuery.trim()) {
       setSuggestions([])
       return
     }
-
-    debounceRef.current = setTimeout(async () => {
+    void (async () => {
       try {
-        const results = await autocompleteLocation(query.trim())
+        const results = await autocompleteLocation(debouncedQuery.trim())
         setSuggestions(results)
       } catch {
         // Silently fail autocomplete — don't show error for background fetches
       }
-    }, 300)
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [query])
+    })()
+  }, [debouncedQuery])
 
   async function handleSelect(placeId: string) {
     setSuggestions([])

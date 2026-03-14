@@ -2,6 +2,7 @@ import confetti from 'canvas-confetti'
 import { motion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
 import { getDirectionsUrl } from '../lib/directions'
+import { getRestaurantName } from '../lib/sort'
 import type { Restaurant } from '../types'
 
 interface Props {
@@ -55,7 +56,7 @@ export default function CelebrationOverlay({ restaurant, onDismiss }: Props) {
       <div className="celebration-card">
         <div className="celebration-emoji">🎉</div>
         <h2>It's decided!</h2>
-        <p className="celebration-name">{restaurant.foundName ?? restaurant.inputName}</p>
+        <p className="celebration-name">{getRestaurantName(restaurant)}</p>
         {restaurant.address && <p className="celebration-address">{restaurant.address}</p>}
 
         {directionsUrl && (

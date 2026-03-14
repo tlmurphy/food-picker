@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { getDirectionsUrl } from '../lib/directions'
+import { getRestaurantName } from '../lib/sort'
 import type { Restaurant, SessionUser } from '../types'
 
 interface Props {
@@ -25,7 +26,7 @@ export default function RestaurantCard({ restaurant, users, currentUserId, rank,
       <div className="card-rank">{rank}</div>
 
       <div className="card-info">
-        <h3 className="card-name">{restaurant.foundName ?? restaurant.inputName}</h3>
+        <h3 className="card-name">{getRestaurantName(restaurant)}</h3>
         {restaurant.address && <p className="card-address">{restaurant.address}</p>}
 
         <div className="vote-row">

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
+import { getRestaurantName } from '../lib/sort'
 import type { Elimination, Restaurant } from '../types'
 
 interface Props {
@@ -8,9 +9,9 @@ interface Props {
   onComplete: (winnerId: string) => void
 }
 
-function getRestaurantName(restaurants: Restaurant[], id: string): string {
+function findRestaurantName(restaurants: Restaurant[], id: string): string {
   const r = restaurants.find((r) => r.id === id)
-  return r?.foundName ?? r?.inputName ?? 'Unknown'
+  return r ? getRestaurantName(r) : 'Unknown'
 }
 
 export default function CoinFlip({ eliminations, restaurants, onComplete }: Props) {
@@ -49,9 +50,9 @@ export default function CoinFlip({ eliminations, restaurants, onComplete }: Prop
 
   if (!elimination) return null
 
-  const name1 = getRestaurantName(restaurants, elimination.restaurant1)
-  const name2 = getRestaurantName(restaurants, elimination.restaurant2)
-  const winnerName = getRestaurantName(restaurants, elimination.winnerId)
+  const name1 = findRestaurantName(restaurants, elimination.restaurant1)
+  const name2 = findRestaurantName(restaurants, elimination.restaurant2)
+  const winnerName = findRestaurantName(restaurants, elimination.winnerId)
   const isHeads = elimination.winnerId === elimination.restaurant1
 
   return (

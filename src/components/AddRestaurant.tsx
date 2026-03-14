@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useDebounce } from '../hooks/useDebounce'
 import { autocompleteRestaurant, getRestaurantPlaceDetails } from '../lib/googlemaps'
 import type { Restaurant, Session } from '../types'
 
@@ -16,30 +17,23 @@ export default function AddRestaurant({ session, userId, restaurants, onAdd }: P
   const [suggestions, setSuggestions] = useState<{ placeId: string; text: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedValue = useDebounce(value, 300)
+  const { locationLat, locationLng } = session
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-
-    if (!value.trim() || session.locationLat == null || session.locationLng == null) {
+    if (!debouncedValue.trim() || locationLat == null || locationLng == null) {
       setSuggestions([])
       return
     }
-
-    debounceRef.current = setTimeout(async () => {
+    void (async () => {
       try {
-        // biome-ignore lint/style/noNonNullAssertion: null case is guarded before entering setTimeout
-        const results = await autocompleteRestaurant(value.trim(), session.locationLat!, session.locationLng!)
+        const results = await autocompleteRestaurant(debouncedValue.trim(), locationLat, locationLng)
         setSuggestions(results)
       } catch {
         // Silently fail autocomplete
       }
-    }, 300)
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [value, session.locationLat, session.locationLng])
+    })()
+  }, [debouncedValue, locationLat, locationLng])
 
   async function handleSelect(placeId: string, suggestionText: string) {
     setSuggestions([])

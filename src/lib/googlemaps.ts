@@ -1,5 +1,7 @@
 import type { PlaceResult } from '../types'
 
+// Module-level session ID, set once by Game on mount. Avoids threading sessionId
+// through every call signature — safe because there is only ever one active session per tab.
 let _sessionId = ''
 export function setApiSessionId(id: string) {
   _sessionId = id
