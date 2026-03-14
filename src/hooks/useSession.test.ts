@@ -35,7 +35,7 @@ const mockSession: Session = {
   locationSetBy: null,
 }
 
-const mockUser: SessionUser = { id: 'u1', name: 'Alice' }
+const mockUser: SessionUser = { id: 'u1', name: 'Alice', sessionId: SESSION_ID, joinedAt: '2024-01-01T00:00:00.000Z' }
 
 function captureSubscriber(): (msg: ServerMessage) => void {
   const call = mockSubscribe.mock.calls[mockSubscribe.mock.calls.length - 1]
@@ -106,7 +106,7 @@ describe('useSession', () => {
     act(() => {
       emit({ type: 'session_state', session: mockSession, users: [mockUser], restaurants: [] })
     })
-    const newUser: SessionUser = { id: 'u2', name: 'Bob' }
+    const newUser: SessionUser = { id: 'u2', name: 'Bob', sessionId: SESSION_ID, joinedAt: '2024-01-01T00:00:00.000Z' }
     act(() => {
       emit({ type: 'user_joined', user: newUser })
     })
