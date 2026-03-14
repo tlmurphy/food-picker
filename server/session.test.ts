@@ -110,7 +110,7 @@ describe('toggleVote', () => {
     const result = mod.toggleVote(id, r.id, 'user1')
     expect(result).not.toBeNull()
     expect(result!.action).toBe('added')
-    if (result!.action === 'added') {
+    if (result !== null && result.action === 'added') {
       expect(result.vote.userId).toBe('user1')
       expect(result.vote.restaurantId).toBe(r.id)
     }
@@ -124,7 +124,7 @@ describe('toggleVote', () => {
     const result = mod.toggleVote(id, r.id, 'user1') // remove
     expect(result).not.toBeNull()
     expect(result!.action).toBe('removed')
-    if (result!.action === 'removed') {
+    if (result !== null && result.action === 'removed') {
       expect(result.userId).toBe('user1')
     }
     expect(mod.getSession(id)!.restaurants[0].votes).toHaveLength(0)

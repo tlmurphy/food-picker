@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 // Fake place IDs used in mock responses
 const LOCATION_PLACE_ID = 'fake-location-place-id'
@@ -23,7 +23,9 @@ const FAKE_RESTAURANT = {
  * POST /api/places:autocomplete endpoint; the place details GET endpoint is
  * shared too. We differentiate via the request body's `includedPrimaryTypes`.
  */
-async function mockGoogleMapsRoutes(page: ReturnType<typeof test['extend']> extends never ? never : Parameters<Parameters<typeof test>[1]>[0]) {
+async function mockGoogleMapsRoutes(
+  page: Page,
+) {
   // POST /api/places:autocomplete  – return appropriate suggestion based on context
   await page.route('**/api/places:autocomplete', async (route) => {
     const body = route.request().postDataJSON() as { includedPrimaryTypes?: string[] }

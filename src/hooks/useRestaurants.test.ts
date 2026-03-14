@@ -8,7 +8,7 @@ import { useRestaurants } from './useRestaurants'
 // ---------------------------------------------------------------------------
 
 const { mockSubscribe, mockSend } = vi.hoisted(() => ({
-  mockSubscribe: vi.fn<[(msg: ServerMessage) => void], () => void>(),
+  mockSubscribe: vi.fn<(handler: (msg: ServerMessage) => void) => () => void>(),
   mockSend: vi.fn(),
 }))
 

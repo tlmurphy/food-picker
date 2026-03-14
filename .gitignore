@@ -25,3 +25,7 @@ dist-ssr
 *.sw?
 
 todos.txt
+
+# Test output
+test-results/
+playwright-report/
