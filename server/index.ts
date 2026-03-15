@@ -27,12 +27,22 @@ setInterval(() => {
 // Maps each WebSocket to the sessionId it belongs to
 const wsToSession = new Map<ServerWebSocket<unknown>, string>()
 
+// All open WebSocket connections (for heartbeat pings)
+const openConnections = new Set<ServerWebSocket<unknown>>()
+
 // Total open WebSocket connections cap
 const MAX_WS_CONNECTIONS = 50
 let wsConnectionCount = 0
 
 // Per-connection WS message rate limiter (60 messages/minute)
 const wsRateLimit = new WeakMap<ServerWebSocket<unknown>, { count: number; resetAt: number }>()
+
+// Heartbeat: ping all open connections every 20s so idleTimeout doesn't evict live sessions
+setInterval(() => {
+  for (const ws of openConnections) {
+    ws.ping()
+  }
+}, 20_000)
 
 Bun.serve({
   port: PORT,
@@ -71,12 +81,16 @@ Bun.serve({
   },
 
   websocket: {
+    // Close connections that go silent for 30s (catches silent mobile drops)
+    idleTimeout: 30,
+
     open(ws) {
       if (wsConnectionCount >= MAX_WS_CONNECTIONS) {
         ws.close(1013, 'Server at capacity')
         return
       }
       wsConnectionCount++
+      openConnections.add(ws)
       console.log('[ws] connection opened')
     },
 
@@ -86,6 +100,7 @@ Bun.serve({
 
     close(ws) {
       wsConnectionCount = Math.max(0, wsConnectionCount - 1)
+      openConnections.delete(ws)
       console.log('[ws] connection closed')
       wsToSession.delete(ws)
       disconnectSocket(ws)
@@ -176,7 +191,10 @@ function isForbiddenOrigin(origin: string | null): boolean {
 
 function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for') ?? ''
-  const ips = forwarded.split(',').map((s) => s.trim()).filter(Boolean)
+  const ips = forwarded
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   return ips[ips.length - 1] ?? '127.0.0.1'
 }
 
