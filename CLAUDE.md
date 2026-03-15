@@ -51,6 +51,14 @@ Run `bun install` after any package.json changes.
 
 `VITE_WS_URL` must be a Railway build variable, not a runtime env var.
 
+## Before Committing
+
+Always run lint:fix before committing to avoid lint errors:
+
+```bash
+~/.bun/bin/bun run lint:fix
+```
+
 ## Testing
 
 - Runner: **vitest** with **happy-dom** environment (configured in `vite.config.ts`)
