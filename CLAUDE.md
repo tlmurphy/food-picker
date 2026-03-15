@@ -21,8 +21,8 @@ Use the full path for bun since it is not on PATH via nvm: `~/.bun/bin/bun`
 ~/.bun/bin/bun run build        # tsc + vite build → dist/
 ~/.bun/bin/bun run test         # vitest (watch)
 ~/.bun/bin/bun run test:run     # vitest (single run)
-~/.bun/bin/bun run lint         # biome + eslint
-~/.bun/bin/bun run lint:fix     # biome + eslint with auto-fix
+~/.bun/bin/bun run lint         # biome check
+~/.bun/bin/bun run lint:fix     # biome check with auto-fix
 ```
 
 Run `bun install` after any package.json changes.
@@ -31,7 +31,7 @@ Run `bun install` after any package.json changes.
 
 - **Frontend**: React + Vite + TypeScript, served from `dist/` by the Bun server in production
 - **Backend**: Bun HTTP + WebSocket server (`server/index.ts`) — no database, sessions are in-memory
-- **Sessions are ephemeral**: cleaned up 30s after last disconnect; no persistence
+- **Sessions are ephemeral**: cleaned up 60s after last disconnect; no persistence
 - **Single deployment**: Railway serves static build + WebSocket + Google Maps proxy from one URL
 - Vite proxies `/ws` and `/api/*` to `localhost:3001` in dev
 

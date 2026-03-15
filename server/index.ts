@@ -97,8 +97,7 @@ console.log(`Server running on http://localhost:${PORT}`)
 
 async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
   // Origin check (same policy as WebSocket) — null origin means same-origin fetch (allowed)
-  const origin = req.headers.get('origin')
-  if (!IS_DEV && origin !== null && !ALLOWED_ORIGINS.has(origin)) {
+  if (isForbiddenOrigin(req.headers.get('origin'))) {
     return new Response('Forbidden', { status: 403 })
   }
 
@@ -109,12 +108,7 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
   }
 
   // Per-IP rate limiting (use last IP in chain — Railway appends real client IP at end)
-  const forwarded = req.headers.get('x-forwarded-for') ?? ''
-  const ips = forwarded
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-  const ip = ips[ips.length - 1] ?? '127.0.0.1'
+  const ip = getClientIp(req)
   if (!checkRateLimit(ip)) {
     return new Response('Too Many Requests', { status: 429 })
   }
@@ -152,8 +146,7 @@ async function proxyGoogleMaps(req: Request, url: URL): Promise<Response> {
 }
 
 async function proxyGeocode(req: Request, url: URL): Promise<Response> {
-  const origin = req.headers.get('origin')
-  if (!IS_DEV && origin !== null && !ALLOWED_ORIGINS.has(origin)) {
+  if (isForbiddenOrigin(req.headers.get('origin'))) {
     return new Response('Forbidden', { status: 403 })
   }
 
@@ -162,12 +155,7 @@ async function proxyGeocode(req: Request, url: URL): Promise<Response> {
     return new Response('Forbidden', { status: 403 })
   }
 
-  const forwarded = req.headers.get('x-forwarded-for') ?? ''
-  const ips = forwarded
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-  const ip = ips[ips.length - 1] ?? '127.0.0.1'
+  const ip = getClientIp(req)
   if (!checkRateLimit(ip)) {
     return new Response('Too Many Requests', { status: 429 })
   }
@@ -180,6 +168,16 @@ async function proxyGeocode(req: Request, url: URL): Promise<Response> {
     status: upstream.status,
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+function isForbiddenOrigin(origin: string | null): boolean {
+  return !IS_DEV && origin !== null && !ALLOWED_ORIGINS.has(origin)
+}
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for') ?? ''
+  const ips = forwarded.split(',').map((s) => s.trim()).filter(Boolean)
+  return ips[ips.length - 1] ?? '127.0.0.1'
 }
 
 async function serveStatic(pathname: string): Promise<Response> {

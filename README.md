@@ -107,6 +107,6 @@ The single Railway service serves the static React build, handles WebSocket conn
 
 ## Notes
 
-- Sessions are ephemeral — all data lives in memory and is lost when the server restarts or after 30 seconds of inactivity
+- Sessions are ephemeral — all data lives in memory and is lost when the server restarts or 60 seconds after the last user disconnects
 - Restaurant search is biased to within ~6 miles of the shared location
 - The map is accessible via **View Map** and opens as a full-screen overlay with all added restaurants pinned
